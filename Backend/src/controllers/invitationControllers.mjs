@@ -1,5 +1,5 @@
 import { validationResult } from "express-validator";
-import Invitation from "../models/Invitation.mjs";
+import { Invitation } from "../models/Invitation.mjs";
 
 // Helper to format validation errors
 const errorCreate = (errors) => {
@@ -22,34 +22,37 @@ class InvitationControllers {
          });
       }
 
-      const { cardId, templateId, brideName, groomName, eventDate, eventLocation, welcomeText } = req.body;
+      const {
+         invitationType, cardId, templateId,
+         eventDate, eventLocation, welcomeText,
+         brideName, groomName,
+         celebrantName, age,
+         eventName, organizer, description
+      } = req.body;
 
       try {
-         // Check if cardId already exists
          const existingCard = await Invitation.findOne({ cardId: cardId.toLowerCase() });
          if (existingCard) {
-            return res.status(409).json({
-               success: false,
-               message: "A card with this ID already exists. Please choose a different slug.",
-            });
+            return res.status(409).json({ success: false, message: "A card with this ID already exists." });
          }
 
-         const invitation = await Invitation.create({
+         const commonData = {
+            invitationType,
             cardId: cardId.toLowerCase(),
             templateId,
-            couple: {
-               bride: brideName,
-               groom: groomName,
-            },
-            event: {
-               date: new Date(eventDate),
-               location: eventLocation,
-            },
-            content: {
-               welcomeText: welcomeText || undefined,
-            },
+            event: { date: new Date(eventDate), location: eventLocation },
+            content: { welcomeText: welcomeText || undefined },
             createdBy: req.authUser._id,
-         });
+         };
+
+         let invitation;
+         if (invitationType === "wedding") {
+            invitation = await Invitation.create({ ...commonData, couple: { bride: brideName, groom: groomName } });
+         } else if (invitationType === "birthday") {
+            invitation = await Invitation.create({ ...commonData, celebrantName, age });
+         } else if (invitationType === "event") {
+            invitation = await Invitation.create({ ...commonData, eventName, organizer, description });
+         }
 
          res.status(201).json({
             success: true,
@@ -123,7 +126,12 @@ class InvitationControllers {
  ---------------------------------------------------------------------------------------------------------------------------------------------------------------*/
    getAllInvitations = async (req, res) => {
       try {
-         const invitations = await Invitation.find()
+         const filter = {};
+         if (req.query.type) {
+            filter.invitationType = req.query.type;
+         }
+
+         const invitations = await Invitation.find(filter)
             .populate("createdBy", "firstName lastName email")
             .sort({ createdAt: -1 });
 
@@ -148,26 +156,35 @@ class InvitationControllers {
  ---------------------------------------------------------------------------------------------------------------------------------------------------------------*/
    updateInvitation = async (req, res) => {
       const { cardId } = req.params;
-      const { templateId, brideName, groomName, eventDate, eventLocation, welcomeText, isPublished } = req.body;
+      const {
+         templateId, eventDate, eventLocation, welcomeText, isPublished,
+         brideName, groomName, celebrantName, age, eventName, organizer, description
+      } = req.body;
 
       try {
          const invitation = await Invitation.findOne({ cardId: cardId.toLowerCase() });
 
          if (!invitation) {
-            return res.status(404).json({
-               success: false,
-               message: "Invitation not found.",
-            });
+            return res.status(404).json({ success: false, message: "Invitation not found." });
          }
 
-         // Update fields if provided
          if (templateId) invitation.templateId = templateId;
-         if (brideName) invitation.couple.bride = brideName;
-         if (groomName) invitation.couple.groom = groomName;
          if (eventDate) invitation.event.date = new Date(eventDate);
          if (eventLocation) invitation.event.location = eventLocation;
          if (welcomeText !== undefined) invitation.content.welcomeText = welcomeText;
          if (isPublished !== undefined) invitation.isPublished = isPublished;
+
+         if (invitation.invitationType === "wedding") {
+            if (brideName) invitation.couple.bride = brideName;
+            if (groomName) invitation.couple.groom = groomName;
+         } else if (invitation.invitationType === "birthday") {
+            if (celebrantName) invitation.celebrantName = celebrantName;
+            if (age !== undefined) invitation.age = age;
+         } else if (invitation.invitationType === "event") {
+            if (eventName) invitation.eventName = eventName;
+            if (organizer) invitation.organizer = organizer;
+            if (description !== undefined) invitation.description = description;
+         }
 
          await invitation.save();
 
@@ -233,10 +250,14 @@ class InvitationControllers {
             { $group: { _id: "$templateId", count: { $sum: 1 } } },
          ]);
 
+         const typeBreakdown = await Invitation.aggregate([
+            { $group: { _id: "$invitationType", count: { $sum: 1 } } },
+         ]);
+
          const recentInvitations = await Invitation.find()
             .sort({ createdAt: -1 })
             .limit(5)
-            .select("cardId templateId couple event.date views createdAt");
+            .select("cardId templateId invitationType couple celebrantName eventName event.date views createdAt");
 
          res.status(200).json({
             success: true,
@@ -246,6 +267,7 @@ class InvitationControllers {
                draftCount: totalInvitations - publishedCount,
                totalViews: totalViews[0]?.total || 0,
                templateBreakdown,
+               typeBreakdown,
                recentInvitations,
             },
          });
