@@ -405,7 +405,7 @@ const RoyalGoldTemplate = ({ data, guestName, guestCount }) => {
           </section>
 
           {/* Guest Personalization Section */}
-          {guestName && (
+          {(
             <section className="py-24 px-8 text-center bg-[#fdfcf9]">
               <motion.div
                 initial={{ opacity: 0 }}
@@ -418,10 +418,10 @@ const RoyalGoldTemplate = ({ data, guestName, guestCount }) => {
                   className="text-sm uppercase mb-6"
                   style={{ letterSpacing: "0.3em" }}
                 >
-                  Honored Guest
+                  Warmly invite to
                 </p>
                 <h2 className="text-4xl md:text-5xl font-light mb-8 italic">
-                  Dear {guestName},
+                   {guestName || "YOU"}
                 </h2>
                 <p className="text-lg leading-relaxed font-light" style={{ color: "#6b5e51" }}>
                   We are overjoyed to share this special day with you. Your
