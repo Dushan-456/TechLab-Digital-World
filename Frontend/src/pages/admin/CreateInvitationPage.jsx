@@ -1,27 +1,84 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import API from "../../services/api";
 import { HiOutlineCheckCircle, HiOutlineClipboardCopy } from "react-icons/hi";
 
-const templates = [
-  { id: "ethereal", name: "Ethereal", desc: "Ultra-minimalist, serif typography, soft earthy tones", color: "#b8a080" },
-  { id: "lumina", name: "Lumina", desc: "Modern glassmorphism, frosted glass, subtle gradients", color: "#a78bfa" },
-  { id: "kinetic", name: "Kinetic", desc: "Dynamic, fluid motion, deep calming colors", color: "#0ea5e9" },
-];
+const templates = {
+  wedding: [
+    { id: "ethereal", name: "Ethereal", desc: "Ultra-minimalist, serif typography", color: "#b8a080" },
+    { id: "lumina", name: "Lumina", desc: "Modern glassmorphism, frosted glass", color: "#a78bfa" },
+    { id: "kinetic", name: "Kinetic", desc: "Dynamic, fluid motion", color: "#0ea5e9" },
+    { id: "royalgold", name: "Royal Gold", desc: "Premium envelope reveal, personalized for guests", color: "#d4af37" },
+  ],
+  birthday: [
+    { id: "joyful", name: "Joyful", desc: "Bright colors, fun animations", color: "#f472b6" },
+  ],
+  event: [
+    { id: "corporate", name: "Corporate", desc: "Clean, professional layout", color: "#1e293b" },
+  ]
+};
 
 const CreateInvitationPage = () => {
+  const { type, cardId: editCardId } = useParams();
+  const navigate = useNavigate();
+
+  const isEditMode = !!editCardId;
+  const [invitationType, setInvitationType] = useState(type || "wedding");
+  
   const [form, setForm] = useState({
     cardId: "",
-    templateId: "ethereal",
-    brideName: "",
-    groomName: "",
+    templateId: templates[type || "wedding"]?.[0]?.id || "ethereal",
     eventDate: "",
     eventLocation: "",
     welcomeText: "",
+    brideName: "",
+    groomName: "",
+    celebrantName: "",
+    age: "",
+    eventName: "",
+    organizer: "",
+    description: "",
   });
-  const [loading, setLoading] = useState(false);
+
+  const [loading, setLoading] = useState(isEditMode);
+  const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(null);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (isEditMode) {
+      const fetchInvitation = async () => {
+        try {
+          const { data } = await API.get(`/invitations/${editCardId}`);
+          const inv = data.data;
+          setInvitationType(inv.invitationType);
+          setForm({
+            cardId: inv.cardId,
+            templateId: inv.templateId,
+            eventDate: new Date(inv.event.date).toISOString().split('T')[0],
+            eventLocation: inv.event.location,
+            welcomeText: inv.content?.welcomeText || "",
+            brideName: inv.couple?.bride || "",
+            groomName: inv.couple?.groom || "",
+            celebrantName: inv.celebrantName || "",
+            age: inv.age || "",
+            eventName: inv.eventName || "",
+            organizer: inv.organizer || "",
+            description: inv.description || "",
+          });
+        } catch (err) {
+          setError("Failed to load invitation.");
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchInvitation();
+    } else {
+      setInvitationType(type || "wedding");
+      setForm(prev => ({ ...prev, templateId: templates[type || "wedding"]?.[0]?.id || "ethereal" }));
+    }
+  }, [editCardId, type]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -32,16 +89,24 @@ const CreateInvitationPage = () => {
     e.preventDefault();
     setError("");
     setSuccess(null);
-    setLoading(true);
+    setSaving(true);
 
+    const payload = { ...form, invitationType };
+    
     try {
-      const { data } = await API.post("/invitations", form);
+      let data;
+      if (isEditMode) {
+        const res = await API.patch(`/invitations/${editCardId}`, payload);
+        data = res.data;
+      } else {
+        const res = await API.post("/invitations", payload);
+        data = res.data;
+      }
       setSuccess(data);
-      setForm({ cardId: "", templateId: "ethereal", brideName: "", groomName: "", eventDate: "", eventLocation: "", welcomeText: "" });
     } catch (err) {
-      setError(err.response?.data?.message || err.response?.data?.error?.[0]?.message || "Failed to create invitation.");
+      setError(err.response?.data?.message || err.response?.data?.error?.[0]?.message || "Failed to save invitation.");
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -52,19 +117,24 @@ const CreateInvitationPage = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  if (loading) return <div className="p-8 text-[var(--color-text-muted)]">Loading invitation details...</div>;
+
+  const currentTemplates = templates[invitationType] || templates.wedding;
+
   return (
     <div className="max-w-3xl space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-[var(--color-text)] font-[var(--font-display)]">Create Invitation</h2>
-        <p className="text-sm text-[var(--color-text-muted)] mt-1">Design a beautiful wedding invitation card</p>
+        <h2 className="text-2xl font-bold text-[var(--color-text)] font-[var(--font-display)] capitalize">
+          {isEditMode ? `Edit ${invitationType} Invitation` : `Create ${invitationType} Invitation`}
+        </h2>
+        <p className="text-sm text-[var(--color-text-muted)] mt-1">Design a beautiful digital invitation card</p>
       </div>
 
-      {/* Success Message */}
       {success && (
         <div className="bg-[var(--color-accent-light)] border border-[var(--color-accent)]/30 rounded-[var(--radius-lg)] p-5">
           <div className="flex items-center gap-2 mb-2">
             <HiOutlineCheckCircle className="text-[var(--color-accent)] text-xl" />
-            <p className="text-sm font-semibold text-[var(--color-accent)]">Invitation Created!</p>
+            <p className="text-sm font-semibold text-[var(--color-accent)]">Invitation Saved!</p>
           </div>
           <div className="flex items-center gap-2 mt-2">
             <code className="flex-1 text-sm bg-white px-3 py-2 rounded-[var(--radius-sm)] border border-[var(--color-border)] text-[var(--color-text)]">
@@ -78,7 +148,6 @@ const CreateInvitationPage = () => {
         </div>
       )}
 
-      {/* Form */}
       <form onSubmit={handleSubmit} className="bg-white rounded-[var(--radius-xl)] border border-[var(--color-border)] shadow-[var(--shadow-sm)] p-6 space-y-5">
         {error && (
           <div className="p-3 rounded-[var(--radius-md)] bg-[var(--color-error)]/8 border border-[var(--color-error)]/20">
@@ -86,61 +155,88 @@ const CreateInvitationPage = () => {
           </div>
         )}
 
-        {/* Card ID */}
         <div>
           <label className="block text-sm font-medium text-[var(--color-text)] mb-1.5">Card ID (URL Slug)</label>
-          <input id="input-card-id" name="cardId" value={form.cardId} onChange={handleChange} placeholder="e.g. john-and-jane" required className="w-full h-11 px-4 text-sm bg-[var(--color-surface-50)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)]/50 transition-all" />
-          <p className="text-xs text-[var(--color-text-light)] mt-1">This will be the URL: /v/{form.cardId || "your-slug"}</p>
+          <input name="cardId" value={form.cardId} onChange={handleChange} disabled={isEditMode} placeholder="e.g. john-and-jane" required className="w-full h-11 px-4 text-sm bg-[var(--color-surface-50)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)]/50 transition-all disabled:opacity-50" />
         </div>
 
-        {/* Template Selection */}
         <div>
           <label className="block text-sm font-medium text-[var(--color-text)] mb-2">Template</label>
-          <div className="grid grid-cols-3 gap-3">
-            {templates.map((t) => (
-              <button key={t.id} type="button" onClick={() => setForm((prev) => ({ ...prev, templateId: t.id }))}
-                className={`p-4 rounded-[var(--radius-md)] border-2 text-left transition-all cursor-pointer ${form.templateId === t.id ? "border-[var(--color-primary)] bg-[var(--color-primary-light)]/30" : "border-[var(--color-border)] hover:border-[var(--color-text-light)]"}`}>
-                <div className="w-8 h-8 rounded-full mb-2" style={{ background: t.color }} />
-                <p className="text-sm font-semibold text-[var(--color-text)]">{t.name}</p>
-                <p className="text-xs text-[var(--color-text-muted)] mt-0.5 line-clamp-2">{t.desc}</p>
-              </button>
+          <select
+            name="templateId"
+            value={form.templateId}
+            onChange={handleChange}
+            className="w-full h-11 px-4 text-sm bg-[var(--color-surface-50)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)]/50 transition-all outline-none"
+          >
+            {currentTemplates.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name} — {t.desc}
+              </option>
             ))}
-          </div>
+          </select>
         </div>
 
-        {/* Names Row */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-[var(--color-text)] mb-1.5">Bride Name</label>
-            <input id="input-bride" name="brideName" value={form.brideName} onChange={handleChange} placeholder="Bride's name" required className="w-full h-11 px-4 text-sm bg-[var(--color-surface-50)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)]/50 transition-all" />
+        {invitationType === "wedding" && (
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-text)] mb-1.5">Bride Name</label>
+              <input name="brideName" value={form.brideName} onChange={handleChange} required className="w-full h-11 px-4 text-sm bg-[var(--color-surface-50)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)]/50 transition-all" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-text)] mb-1.5">Groom Name</label>
+              <input name="groomName" value={form.groomName} onChange={handleChange} required className="w-full h-11 px-4 text-sm bg-[var(--color-surface-50)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)]/50 transition-all" />
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-[var(--color-text)] mb-1.5">Groom Name</label>
-            <input id="input-groom" name="groomName" value={form.groomName} onChange={handleChange} placeholder="Groom's name" required className="w-full h-11 px-4 text-sm bg-[var(--color-surface-50)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)]/50 transition-all" />
-          </div>
-        </div>
+        )}
 
-        {/* Event Row */}
+        {invitationType === "birthday" && (
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-text)] mb-1.5">Celebrant Name</label>
+              <input name="celebrantName" value={form.celebrantName} onChange={handleChange} required className="w-full h-11 px-4 text-sm bg-[var(--color-surface-50)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)]/50 transition-all" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-text)] mb-1.5">Age</label>
+              <input type="number" name="age" value={form.age} onChange={handleChange} className="w-full h-11 px-4 text-sm bg-[var(--color-surface-50)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)]/50 transition-all" />
+            </div>
+          </div>
+        )}
+
+        {invitationType === "event" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-text)] mb-1.5">Event Name</label>
+              <input name="eventName" value={form.eventName} onChange={handleChange} required className="w-full h-11 px-4 text-sm bg-[var(--color-surface-50)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)]/50 transition-all" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-text)] mb-1.5">Organizer</label>
+              <input name="organizer" value={form.organizer} onChange={handleChange} className="w-full h-11 px-4 text-sm bg-[var(--color-surface-50)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)]/50 transition-all" />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-[var(--color-text)] mb-1.5">Description</label>
+              <textarea name="description" value={form.description} onChange={handleChange} rows={2} className="w-full px-4 py-3 text-sm bg-[var(--color-surface-50)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)]/50 transition-all resize-none" />
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-[var(--color-text)] mb-1.5">Event Date</label>
-            <input id="input-date" name="eventDate" type="date" value={form.eventDate} onChange={handleChange} required className="w-full h-11 px-4 text-sm bg-[var(--color-surface-50)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)]/50 transition-all" />
+            <input name="eventDate" type="date" value={form.eventDate} onChange={handleChange} required className="w-full h-11 px-4 text-sm bg-[var(--color-surface-50)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)]/50 transition-all" />
           </div>
           <div>
             <label className="block text-sm font-medium text-[var(--color-text)] mb-1.5">Event Location</label>
-            <input id="input-location" name="eventLocation" value={form.eventLocation} onChange={handleChange} placeholder="Venue & city" required className="w-full h-11 px-4 text-sm bg-[var(--color-surface-50)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)]/50 transition-all" />
+            <input name="eventLocation" value={form.eventLocation} onChange={handleChange} required className="w-full h-11 px-4 text-sm bg-[var(--color-surface-50)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)]/50 transition-all" />
           </div>
         </div>
 
-        {/* Welcome Text */}
         <div>
-          <label className="block text-sm font-medium text-[var(--color-text)] mb-1.5">Welcome Text (Optional)</label>
-          <textarea id="input-welcome" name="welcomeText" value={form.welcomeText} onChange={handleChange} rows={3} placeholder="Together with their families, request the pleasure of your company" className="w-full px-4 py-3 text-sm bg-[var(--color-surface-50)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)]/50 transition-all resize-none" />
+          <label className="block text-sm font-medium text-[var(--color-text)] mb-1.5">Welcome Text / Tagline</label>
+          <textarea name="welcomeText" value={form.welcomeText} onChange={handleChange} rows={2} className="w-full px-4 py-3 text-sm bg-[var(--color-surface-50)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)]/50 transition-all resize-none" />
         </div>
 
-        {/* Submit */}
-        <button id="submit-invitation" type="submit" disabled={loading} className="w-full h-11 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-dark)] text-white text-sm font-semibold rounded-[var(--radius-md)] hover:shadow-lg transition-all disabled:opacity-50 cursor-pointer">
-          {loading ? "Creating..." : "Create Invitation"}
+        <button type="submit" disabled={saving} className="w-full h-11 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-dark)] text-white text-sm font-semibold rounded-[var(--radius-md)] hover:shadow-lg transition-all disabled:opacity-50 cursor-pointer">
+          {saving ? "Saving..." : isEditMode ? "Update Invitation" : "Create Invitation"}
         </button>
       </form>
     </div>
