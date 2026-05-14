@@ -49,6 +49,10 @@ export const resetPasswordValidate = () => [
 // --- Invitation Validation Rules -------------------------------------------------------------------------------------
 
 export const createInvitationValidator = () => [
+   body("invitationType")
+      .trim()
+      .notEmpty().withMessage("Invitation type is required")
+      .isIn(["wedding", "birthday", "event"]).withMessage("Type must be 'wedding', 'birthday', or 'event'"),
    body("cardId")
       .trim()
       .notEmpty().withMessage("Card ID (slug) is required")
@@ -56,16 +60,7 @@ export const createInvitationValidator = () => [
       .matches(/^[a-z0-9-]+$/).withMessage("Card ID can only contain lowercase letters, numbers, and hyphens"),
    body("templateId")
       .trim()
-      .notEmpty().withMessage("Template selection is required")
-      .isIn(["ethereal", "lumina", "kinetic"]).withMessage("Template must be 'ethereal', 'lumina', or 'kinetic'"),
-   body("brideName")
-      .trim()
-      .notEmpty().withMessage("Bride name is required")
-      .isLength({ min: 2, max: 100 }).withMessage("Bride name must be between 2 and 100 characters"),
-   body("groomName")
-      .trim()
-      .notEmpty().withMessage("Groom name is required")
-      .isLength({ min: 2, max: 100 }).withMessage("Groom name must be between 2 and 100 characters"),
+      .notEmpty().withMessage("Template selection is required"),
    body("eventDate")
       .notEmpty().withMessage("Event date is required")
       .isISO8601().withMessage("Event date must be a valid date"),
@@ -77,4 +72,44 @@ export const createInvitationValidator = () => [
       .optional()
       .trim()
       .isLength({ max: 500 }).withMessage("Welcome text must not exceed 500 characters"),
+
+   // Wedding Specific
+   body("brideName")
+      .if(body("invitationType").equals("wedding"))
+      .trim().notEmpty().withMessage("Bride name is required"),
+   body("groomName")
+      .if(body("invitationType").equals("wedding"))
+      .trim().notEmpty().withMessage("Groom name is required"),
+
+   // Birthday Specific
+   body("celebrantName")
+      .if(body("invitationType").equals("birthday"))
+      .trim().notEmpty().withMessage("Celebrant name is required"),
+   body("age")
+      .if(body("invitationType").equals("birthday"))
+      .optional({ checkFalsy: true })
+      .isNumeric().withMessage("Age must be a number"),
+
+   // Event Specific
+   body("eventName")
+      .if(body("invitationType").equals("event"))
+      .trim().notEmpty().withMessage("Event name is required"),
+   body("organizer").optional().trim(),
+   body("description").optional().trim(),
+];
+
+// --- Business Card Validation Rules -----------------------------------------------------------------------------------
+
+export const createBusinessCardValidator = () => [
+   body("cardId")
+      .trim()
+      .notEmpty().withMessage("Card ID (slug) is required")
+      .isLength({ min: 3, max: 60 }).withMessage("Card ID must be between 3 and 60 characters")
+      .matches(/^[a-z0-9-]+$/).withMessage("Card ID can only contain lowercase letters, numbers, and hyphens"),
+   body("templateId")
+      .trim()
+      .notEmpty().withMessage("Template selection is required"),
+   body("personalInfo.fullName")
+      .trim()
+      .notEmpty().withMessage("Full name is required"),
 ];
