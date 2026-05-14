@@ -1,106 +1,93 @@
-import express from 'express';
-import mongoose from 'mongoose';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import jwt from 'jsonwebtoken';
-import { body, validationResult } from 'express-validator';
-import User from './models/User.mjs';
-import Invitation from './models/Invitation.mjs';
+import "dotenv/config";
+import express from "express";
+import cors from "cors";
+import rootRouter from "./src/routes/index.mjs";
+import cookieParser from "cookie-parser";
+import path from "path";
+import { fileURLToPath } from "url";
+import { errorHandler } from "./src/middleware/errorMiddleware.mjs";
+import helmet from "helmet";
+import morgan from "morgan";
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const app = express();
-const PORT = process.env.PORT || 5000;
+// Create an Express server instance
+const server = express();
+// Trust proxy (needed when behind reverse proxies for correct IP/HTTPS detection)
+server.set("trust proxy", 1);
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+// Define the server port (from .env or default 5001)
+const PORT = process.env.PORT || 5001;
+const isProduction = process.env.NODE_ENV === "production";
 
-// Database Connection
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err));
+// Security headers
+server.use(helmet());
 
-// Auth Middleware
-const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+// HTTP request logging
+server.use(morgan(isProduction ? "combined" : "dev"));
 
-  if (!token) return res.status(401).json({ message: 'Access denied. No token provided.' });
+// Strict CORS configuration
+const allowedOrigins = (process.env.FRONTEND_URL || "")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err) return res.status(403).json({ message: 'Invalid or expired token.' });
-    req.user = user;
-    next();
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true); // allow non-browser clients
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  exposedHeaders: ["Content-Disposition"],
+  optionsSuccessStatus: 204,
+};
+
+server.use(cors(corsOptions));
+server.options("*", cors(corsOptions));
+
+// Middleware to parse JSON request bodies
+server.use(express.json());
+
+// Middleware to parse URL-encoded request bodies
+server.use(express.urlencoded({ extended: true }));
+
+// Middleware to use cookies
+server.use(cookieParser());
+
+// Serve static uploaded files ---
+const staticUploadsPath = path.join(__dirname, "..", "public", "uploads");
+server.use("/uploads", express.static(staticUploadsPath));
+
+// Health and readiness probes
+server.get("/healthz", (req, res) => res.sendStatus(200));
+server.get("/readyz", (req, res) => res.sendStatus(200));
+
+// Use main API routes (all routes start with /api/v1)
+server.use("/api/v1", rootRouter);
+
+// Error handler
+server.use(errorHandler);
+
+// Start the server and listen on the defined port
+const httpServer = server.listen(PORT, () =>
+  console.log(`Server is running........on port ${PORT}  :)`)
+);
+
+// Graceful shutdown
+const shutdown = (signal) => {
+  console.log(`${signal} received: closing server...`);
+  httpServer.close((err) => {
+    if (err) {
+      console.error("Error during HTTP server close", err);
+      process.exit(1);
+    }
+    process.exit(0);
   });
 };
 
-// Routes
-
-// 1. Auth: Login
-app.post('/api/auth/login', [
-  body('email').isEmail().withMessage('Enter a valid email'),
-  body('password').notEmpty().withMessage('Password is required')
-], async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-
-  const { email, password } = req.body;
-
-  try {
-    const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: 'Invalid email or password' });
-
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) return res.status(400).json({ message: 'Invalid email or password' });
-
-    const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1d' });
-    res.json({ token, user: { id: user._id, email: user.email } });
-  } catch (err) {
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// 2. Invitations: Create (Protected)
-app.post('/api/invitations', authenticateToken, [
-  body('cardId').notEmpty().withMessage('Card ID is required').isSlug().withMessage('Card ID must be a valid slug'),
-  body('templateId').isIn(['ethereal', 'lumina', 'kinetic']).withMessage('Invalid template'),
-  body('couple.bride').notEmpty().withMessage('Bride name is required'),
-  body('couple.groom').notEmpty().withMessage('Groom name is required'),
-  body('event.date').isISO8601().withMessage('Valid date is required'),
-  body('event.location').notEmpty().withMessage('Location is required'),
-  body('content.welcomeText').notEmpty().withMessage('Welcome text is required')
-], async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-
-  try {
-    const existingCard = await Invitation.findOne({ cardId: req.body.cardId });
-    if (existingCard) return res.status(400).json({ message: 'Card ID already exists' });
-
-    const newInvitation = new Invitation(req.body);
-    await newInvitation.save();
-    res.status(201).json(newInvitation);
-  } catch (err) {
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// 3. Invitations: Fetch (Public)
-app.get('/api/invitations/:cardId', async (req, res) => {
-  try {
-    const invitation = await Invitation.findOne({ cardId: req.params.cardId });
-    if (!invitation) return res.status(404).json({ message: 'Invitation not found' });
-    res.json(invitation);
-  } catch (err) {
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGTERM", () => shutdown("SIGTERM"));
