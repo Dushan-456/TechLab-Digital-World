@@ -8,6 +8,11 @@ import {
   HiOutlineLogout,
   HiOutlineChevronLeft,
   HiOutlineHeart,
+  HiOutlineGift,
+  HiOutlineCalendar,
+  HiOutlineIdentification,
+  HiOutlineUserAdd,
+  HiOutlineUsers,
 } from "react-icons/hi";
 
 const navItems = [
@@ -18,14 +23,47 @@ const navItems = [
     end: true,
   },
   {
-    label: "Create Invitation",
-    path: "/admin/create",
-    icon: HiOutlinePlusCircle,
+    label: "Wedding Invite",
+    path: "/admin/create/wedding",
+    icon: HiOutlineHeart,
   },
   {
-    label: "Manage Cards",
+    label: "Birthday Invite",
+    path: "/admin/create/birthday",
+    icon: HiOutlineGift,
+  },
+  {
+    label: "Event Invite",
+    path: "/admin/create/event",
+    icon: HiOutlineCalendar,
+  },
+  {
+    label: "Business Card",
+    path: "/admin/business-cards/create",
+    icon: HiOutlineIdentification,
+  },
+  {
+    label: "Manage Invitations",
     path: "/admin/invitations",
     icon: HiOutlineCollection,
+    end: true,
+  },
+  {
+    label: "Manage Business Cards",
+    path: "/admin/business-cards",
+    icon: HiOutlineIdentification,
+    end: true,
+  },
+  {
+    label: "Create User",
+    path: "/admin/users/create",
+    icon: HiOutlineUserAdd,
+  },
+  {
+    label: "Manage Users",
+    path: "/admin/users",
+    icon: HiOutlineUsers,
+    end: true,
   },
   {
     label: "Settings",
