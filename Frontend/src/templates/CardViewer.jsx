@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import axios from "axios";
-import EtherealTemplate from "./EtherealTemplate";
-import LuminaTemplate from "./LuminaTemplate";
-import KineticTemplate from "./KineticTemplate";
+import EtherealTemplate from "./wedding/EtherealTemplate";
+import LuminaTemplate from "./wedding/LuminaTemplate";
+import KineticTemplate from "./wedding/KineticTemplate";
+import RoyalGoldTemplate from "./wedding/RoyalGoldTemplate";
+import JoyfulTemplate from "./birthday/JoyfulTemplate";
+import CorporateTemplate from "./event/CorporateTemplate";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -11,10 +14,17 @@ const templateMap = {
   ethereal: EtherealTemplate,
   lumina: LuminaTemplate,
   kinetic: KineticTemplate,
+  royalgold: RoyalGoldTemplate,
+  joyful: JoyfulTemplate,
+  corporate: CorporateTemplate,
 };
 
 const CardViewer = () => {
   const { cardId } = useParams();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const guestName = searchParams.get("name") || "";
+  const guestCount = searchParams.get("guests") || "";
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -66,7 +76,7 @@ const CardViewer = () => {
     );
   }
 
-  return <TemplateComponent data={data} />;
+  return <TemplateComponent data={data} guestName={guestName} guestCount={guestCount} />;
 };
 
 export default CardViewer;
