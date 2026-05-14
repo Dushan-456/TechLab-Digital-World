@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import DB from "../config/db.mjs";
+import User from "../models/User.mjs";
 
 /**-------------------------------------------------------------------------------------------------------------------------------------------------
  *  Middleware to authenticate a user based on JWT token.
@@ -18,23 +18,16 @@ export const authenticateToken = async (req, res, next) => {
         if (!token) {
             return res.status(401).json({
                 message: "Authentication Error",
-                error: "Sorry Access Denied.Please Logged In (No token provided or No Cookies found)",
+                error: "Sorry Access Denied. Please Log In (No token provided or No Cookies found)",
             });
         }
       // Verify token
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       // Get user from the database and attach it to the request object
-      // Exclude the password from the user object
-        const authUser = await DB.user.findUnique({
-            where: { id: decoded.userId },
-            select: {
-                id: true,
-                email: true,
-                username: true,
-                role: true, 
-            },
-        });
+        const authUser = await User.findById(decoded.userId).select(
+            "_id email username firstName lastName role"
+        );
 
         if (!authUser) {
             return res.status(401).json({
@@ -64,7 +57,6 @@ export const authorizeRole = (allowedRoles) => {
     return (req, res, next) => {
         // req.authUser should be set by authenticateToken
         if (!req.authUser) {
-            // This case should ideally not happen if authenticateToken runs first,
             return res.status(401).json({
                 message: "Authorization Error",
                 error: "User not authenticated.",
@@ -101,10 +93,9 @@ export const attachUserIfAuthenticated = async (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const authUser = await DB.user.findUnique({
-            where: { id: decoded.userId },
-            select: { id: true, email: true, username: true, role: true },
-        });
+        const authUser = await User.findById(decoded.userId).select(
+            "_id email username firstName lastName role"
+        );
 
         if (authUser) {
             req.authUser = authUser; // Attach user if found

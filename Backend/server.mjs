@@ -8,6 +8,7 @@ import { fileURLToPath } from "url";
 import { errorHandler } from "./src/middleware/errorMiddleware.mjs";
 import helmet from "helmet";
 import morgan from "morgan";
+import connectDB from "./src/config/db.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -47,7 +48,7 @@ const corsOptions = {
 };
 
 server.use(cors(corsOptions));
-server.options("*", cors(corsOptions));
+
 
 // Middleware to parse JSON request bodies
 server.use(express.json());
@@ -72,22 +73,24 @@ server.use("/api/v1", rootRouter);
 // Error handler
 server.use(errorHandler);
 
-// Start the server and listen on the defined port
-const httpServer = server.listen(PORT, () =>
-  console.log(`Server is running........on port ${PORT}  :)`)
-);
+// Connect to MongoDB and then start the server
+connectDB().then(() => {
+  const httpServer = server.listen(PORT, () =>
+    console.log(`🚀 Server is running on port ${PORT}`)
+  );
 
-// Graceful shutdown
-const shutdown = (signal) => {
-  console.log(`${signal} received: closing server...`);
-  httpServer.close((err) => {
-    if (err) {
-      console.error("Error during HTTP server close", err);
-      process.exit(1);
-    }
-    process.exit(0);
-  });
-};
+  // Graceful shutdown
+  const shutdown = (signal) => {
+    console.log(`${signal} received: closing server...`);
+    httpServer.close((err) => {
+      if (err) {
+        console.error("Error during HTTP server close", err);
+        process.exit(1);
+      }
+      process.exit(0);
+    });
+  };
 
-process.on("SIGINT", () => shutdown("SIGINT"));
-process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+});
