@@ -1,11 +1,11 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import rootRouter from "./src/routes/index.mjs";
+import rootRouter from "./routes/index.mjs";
 import cookieParser from "cookie-parser";
 import path from "path";
 import { fileURLToPath } from "url";
-import { errorHandler } from "./src/middleware/errorMiddleware.mjs";
+import { errorHandler } from "./middleware/errorMiddleware.mjs";
 import helmet from "helmet";
 import morgan from "morgan";
 
@@ -17,9 +17,11 @@ const server = express();
 // Trust proxy (needed when behind reverse proxies for correct IP/HTTPS detection)
 server.set("trust proxy", 1);
 
-// Define the server port (from .env or default 5001)
 const PORT = process.env.PORT || 5001;
 const isProduction = process.env.NODE_ENV === "production";
+
+import connectDB from "./config/db.mjs";
+connectDB();
 
 // Security headers
 server.use(helmet());
@@ -47,7 +49,7 @@ const corsOptions = {
 };
 
 server.use(cors(corsOptions));
-server.options("*", cors(corsOptions));
+
 
 // Middleware to parse JSON request bodies
 server.use(express.json());

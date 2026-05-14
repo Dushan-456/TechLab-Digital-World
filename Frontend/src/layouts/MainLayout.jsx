@@ -2,12 +2,8 @@ import { Outlet } from "react-router-dom";
 
 const MainLayout = () => {
   return (
-    <div className=" w-full  ">
-      {/* <Header /> */}
-
+    <div className="w-full">
       <Outlet />
-      {/* <Footer />
-      <MobileBottomMenu/> */}
     </div>
   );
 };
