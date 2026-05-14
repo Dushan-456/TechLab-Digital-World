@@ -112,7 +112,7 @@ const RoyalGoldTemplate = ({ data, guestName, guestCount }) => {
               {/* Back panel of envelope */}
               <div
                 className="absolute inset-0 rounded-sm"
-                style={{ background: "#f5ead0", zIndex: 1 }}
+                style={{ background: "#eee0beff", zIndex: 1 }}
               />
 
               {/* Internal Card (visible through gap, slides up) */}
