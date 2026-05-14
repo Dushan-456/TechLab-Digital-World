@@ -1,6 +1,12 @@
 import mongoose from "mongoose";
 
-const invitationSchema = new mongoose.Schema(
+const baseOptions = {
+   discriminatorKey: "invitationType",
+   collection: "invitations",
+   timestamps: true,
+};
+
+const baseInvitationSchema = new mongoose.Schema(
    {
       cardId: {
          type: String,
@@ -13,22 +19,6 @@ const invitationSchema = new mongoose.Schema(
       templateId: {
          type: String,
          required: [true, "Template selection is required"],
-         enum: {
-            values: ["ethereal", "lumina", "kinetic"],
-            message: "Template must be either 'ethereal', 'lumina', or 'kinetic'",
-         },
-      },
-      couple: {
-         bride: {
-            type: String,
-            required: [true, "Bride name is required"],
-            trim: true,
-         },
-         groom: {
-            type: String,
-            required: [true, "Groom name is required"],
-            trim: true,
-         },
       },
       event: {
          date: {
@@ -44,7 +34,6 @@ const invitationSchema = new mongoose.Schema(
       content: {
          welcomeText: {
             type: String,
-            default: "Together with their families, request the pleasure of your company",
             trim: true,
          },
       },
@@ -61,15 +50,44 @@ const invitationSchema = new mongoose.Schema(
          default: 0,
       },
    },
-   {
-      timestamps: true,
-   }
+   baseOptions
 );
 
-// Index for faster lookups
-invitationSchema.index({ cardId: 1 });
-invitationSchema.index({ createdBy: 1 });
+baseInvitationSchema.index({ invitationType: 1 });
 
-const Invitation = mongoose.model("Invitation", invitationSchema);
+const Invitation = mongoose.model("Invitation", baseInvitationSchema);
 
-export default Invitation;
+// ----------------------------------------
+// Discriminator: Wedding
+// ----------------------------------------
+const weddingSchema = new mongoose.Schema({
+   couple: {
+      bride: { type: String, required: [true, "Bride name is required"], trim: true },
+      groom: { type: String, required: [true, "Groom name is required"], trim: true },
+   },
+});
+
+const WeddingInvitation = Invitation.discriminator("wedding", weddingSchema);
+
+// ----------------------------------------
+// Discriminator: Birthday
+// ----------------------------------------
+const birthdaySchema = new mongoose.Schema({
+   celebrantName: { type: String, required: [true, "Celebrant name is required"], trim: true },
+   age: { type: Number, required: false },
+});
+
+const BirthdayInvitation = Invitation.discriminator("birthday", birthdaySchema);
+
+// ----------------------------------------
+// Discriminator: Event
+// ----------------------------------------
+const eventSchema = new mongoose.Schema({
+   eventName: { type: String, required: [true, "Event name is required"], trim: true },
+   organizer: { type: String, required: false, trim: true },
+   description: { type: String, required: false, trim: true },
+});
+
+const EventInvitation = Invitation.discriminator("event", eventSchema);
+
+export { Invitation, WeddingInvitation, BirthdayInvitation, EventInvitation };
