@@ -60,8 +60,7 @@ server.use(express.urlencoded({ extended: true }));
 server.use(cookieParser());
 
 // Serve static uploaded files ---
-const staticUploadsPath = path.join(__dirname, "..", "public", "uploads");
-server.use("/uploads", express.static(staticUploadsPath));
+server.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Health and readiness probes
 server.get("/healthz", (req, res) => res.sendStatus(200));
