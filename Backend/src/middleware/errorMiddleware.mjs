@@ -4,13 +4,29 @@
 // General error handler
 // eslint-disable-next-line no-unused-vars
 export const errorHandler = (err, req, res, next) => {
+  console.error("🔥 ERROR CAUGHT IN MIDDLEWARE:", err);
+  
   // Multer errors may be thrown in upload flows
   if (err && err.name === "MulterError") {
+    console.error("🚨 MULTER ERROR DETAILS:", {
+      message: err.message,
+      code: err.code,
+      field: err.field
+    });
+    
+    let userFriendlyMessage = err.message;
+    if (err.code === "LIMIT_FILE_SIZE") {
+      userFriendlyMessage = `File is too large (${err.field}). Please ensure images are under the allowed size limit.`;
+    } else if (err.code === "LIMIT_UNEXPECTED_FILE") {
+      userFriendlyMessage = `Too many files uploaded for ${err.field}.`;
+    }
+
     return res.status(400).json({
       success: false,
-      message: "File upload failed",
+      message: userFriendlyMessage,
       error: err.message,
       code: err.code,
+      field: err.field
     });
   }
 
