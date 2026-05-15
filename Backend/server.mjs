@@ -23,7 +23,9 @@ const PORT = process.env.PORT || 5001;
 const isProduction = process.env.NODE_ENV === "production";
 
 // Security headers
-server.use(helmet());
+server.use(helmet({
+  crossOriginResourcePolicy: false, // Allow cross-origin images to load (frontend on 5173, backend on 5001)
+}));
 
 // HTTP request logging
 server.use(morgan(isProduction ? "combined" : "dev"));
@@ -61,6 +63,7 @@ server.use(cookieParser());
 
 // Serve static uploaded files ---
 server.use("/uploads", express.static(path.join(__dirname, "uploads")));
+server.use("/audio", express.static(path.join(__dirname, "src/audio")));
 
 // Health and readiness probes
 server.get("/healthz", (req, res) => res.sendStatus(200));
