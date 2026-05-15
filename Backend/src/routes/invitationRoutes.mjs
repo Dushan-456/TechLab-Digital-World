@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { authenticateToken, authorizeRole } from "../middleware/authMiddleware.mjs";
 import { createInvitationValidator } from "../middleware/validationMethods.mjs";
+import { invitationUpload } from "../middleware/uploadMiddleware.mjs";
 import invitationControllers from "../controllers/invitationControllers.mjs";
 
 const invitationRoutes = Router();
@@ -11,9 +12,14 @@ invitationRoutes.get("/:cardId", invitationControllers.getInvitationByCardId);
 
 // --- PROTECTED ROUTES (Require Authentication) -----------------------------------------------------------------------
 
-invitationRoutes.post("/", authenticateToken, createInvitationValidator(), invitationControllers.createInvitation);
+const uploadFields = invitationUpload.fields([
+   { name: "coverImage", maxCount: 1 },
+   { name: "galleryImages", maxCount: 10 },
+]);
+
+invitationRoutes.post("/", authenticateToken, uploadFields, createInvitationValidator(), invitationControllers.createInvitation);
 invitationRoutes.get("/", authenticateToken, invitationControllers.getAllInvitations);
-invitationRoutes.patch("/:cardId", authenticateToken, invitationControllers.updateInvitation);
+invitationRoutes.patch("/:cardId", authenticateToken, uploadFields, invitationControllers.updateInvitation);
 
 // --- ADMIN-ONLY ROUTES ------------------------------------------------------------------------------------------------
 
