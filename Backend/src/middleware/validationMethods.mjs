@@ -80,6 +80,25 @@ export const createInvitationValidator = () => [
    body("groomName")
       .if(body("invitationType").equals("wedding"))
       .trim().notEmpty().withMessage("Groom name is required"),
+   body("brideParents")
+      .if(body("invitationType").equals("wedding"))
+      .optional().trim(),
+   body("groomParents")
+      .if(body("invitationType").equals("wedding"))
+      .optional().trim(),
+   body("eventTime").optional().trim(),
+   body("mapEmbedUrl").optional().trim(),
+   body("ceremonyType")
+      .if(body("invitationType").equals("wedding"))
+      .optional()
+      .isInt({ min: 1, max: 5 }).withMessage("Ceremony type must be between 1 and 5"),
+   body("dressCode")
+      .if(body("invitationType").equals("wedding"))
+      .optional()
+      .isInt({ min: 1, max: 3 }).withMessage("Dress code must be between 1 and 3"),
+   body("backgroundMusic")
+      .if(body("invitationType").equals("wedding"))
+      .optional().trim(),
 
    // Birthday Specific
    body("celebrantName")
