@@ -189,7 +189,7 @@ const RoyalGoldTemplate = ({ data, guestName, guestCount }) => {
           {data.backgroundMusic && (
             <button 
               onClick={toggleMusic} 
-              className="fixed bottom-8 right-8 z-50 w-10 h-10 rounded-full flex items-center justify-center shadow-[0_8px_25px_rgba(138,101,32,0.3)] hover:scale-110 active:scale-95 transition-all duration-300 bg-[#8a6520] text-[#fdf8f0]"
+              className="fixed bottom-6 right-6 z-50 w-10 h-10 rounded-full flex items-center justify-center shadow-[0_8px_25px_rgba(138,101,32,0.3)] hover:scale-110 active:scale-95 transition-all duration-300 bg-[#8a6520] text-[#fdf8f0]"
             >
               {isPlaying ? <HiOutlineVolumeUp className="text-2xl" /> : <HiOutlineVolumeOff className="text-2xl" />}
             </button>
