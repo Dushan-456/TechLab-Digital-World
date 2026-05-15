@@ -25,9 +25,17 @@ const baseInvitationSchema = new mongoose.Schema(
             type: Date,
             required: [true, "Event date is required"],
          },
+         time: {
+            type: String,
+            trim: true,
+         },
          location: {
             type: String,
             required: [true, "Event location is required"],
+            trim: true,
+         },
+         mapEmbedUrl: {
+            type: String,
             trim: true,
          },
       },
@@ -40,6 +48,11 @@ const baseInvitationSchema = new mongoose.Schema(
       createdBy: {
          type: mongoose.Schema.Types.ObjectId,
          ref: "User",
+      },
+      rsvp: {
+         deadline: {
+            type: Date,
+         },
       },
       isPublished: {
          type: Boolean,
@@ -65,6 +78,23 @@ const weddingSchema = new mongoose.Schema({
       bride: { type: String, required: [true, "Bride name is required"], trim: true },
       groom: { type: String, required: [true, "Groom name is required"], trim: true },
    },
+   parents: {
+      brideParents: { type: String, trim: true },
+      groomParents: { type: String, trim: true },
+   },
+   coverImage: { type: String },
+   galleryImages: [{ type: String }],
+   ceremonyType: {
+      type: Number,
+      enum: [1, 2, 3, 4, 5],
+      default: 1,
+   },
+   dressCode: {
+      type: Number,
+      enum: [1, 2, 3],
+      default: 1,
+   },
+   backgroundMusic: { type: String, trim: true },
 });
 
 const WeddingInvitation = Invitation.discriminator("wedding", weddingSchema);
