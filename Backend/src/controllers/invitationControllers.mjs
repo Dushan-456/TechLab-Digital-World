@@ -24,10 +24,12 @@ class InvitationControllers {
 
       const {
          invitationType, cardId, templateId,
-         eventDate, eventLocation, welcomeText,
-         brideName, groomName,
+         eventDate, eventLocation, eventTime, mapEmbedUrl, welcomeText,
+         brideName, groomName, brideParents, groomParents,
+         ceremonyType, dressCode, backgroundMusic,
          celebrantName, age,
-         eventName, organizer, description
+         eventName, organizer, description,
+         rsvpDeadline
       } = req.body;
 
       try {
@@ -40,14 +42,37 @@ class InvitationControllers {
             invitationType,
             cardId: cardId.toLowerCase(),
             templateId,
-            event: { date: new Date(eventDate), location: eventLocation },
+            event: {
+               date: new Date(eventDate),
+               location: eventLocation,
+               time: eventTime || undefined,
+               mapEmbedUrl: mapEmbedUrl || undefined,
+            },
             content: { welcomeText: welcomeText || undefined },
+            rsvp: {
+               deadline: rsvpDeadline ? new Date(rsvpDeadline) : undefined,
+            },
             createdBy: req.authUser._id,
          };
 
          let invitation;
          if (invitationType === "wedding") {
-            invitation = await Invitation.create({ ...commonData, couple: { bride: brideName, groom: groomName } });
+            const coverFile = req.files?.coverImage?.[0];
+            const galleryFiles = req.files?.galleryImages || [];
+
+            invitation = await Invitation.create({
+               ...commonData,
+               couple: { bride: brideName, groom: groomName },
+               parents: {
+                  brideParents: brideParents || undefined,
+                  groomParents: groomParents || undefined,
+               },
+               coverImage: coverFile ? `/uploads/invitations/${coverFile.filename}` : undefined,
+               galleryImages: galleryFiles.map((f) => `/uploads/invitations/${f.filename}`),
+               ceremonyType: ceremonyType ? Number(ceremonyType) : 1,
+               dressCode: dressCode ? Number(dressCode) : 1,
+               backgroundMusic: backgroundMusic || undefined,
+            });
          } else if (invitationType === "birthday") {
             invitation = await Invitation.create({ ...commonData, celebrantName, age });
          } else if (invitationType === "event") {
@@ -157,8 +182,12 @@ class InvitationControllers {
    updateInvitation = async (req, res) => {
       const { cardId } = req.params;
       const {
-         templateId, eventDate, eventLocation, welcomeText, isPublished,
-         brideName, groomName, celebrantName, age, eventName, organizer, description
+         templateId, eventDate, eventLocation, eventTime, mapEmbedUrl,
+         welcomeText, isPublished,
+         brideName, groomName, brideParents, groomParents,
+         ceremonyType, dressCode, backgroundMusic,
+         celebrantName, age, eventName, organizer, description,
+         rsvpDeadline
       } = req.body;
 
       try {
@@ -171,12 +200,40 @@ class InvitationControllers {
          if (templateId) invitation.templateId = templateId;
          if (eventDate) invitation.event.date = new Date(eventDate);
          if (eventLocation) invitation.event.location = eventLocation;
+         if (eventTime !== undefined) invitation.event.time = eventTime;
+         if (mapEmbedUrl !== undefined) invitation.event.mapEmbedUrl = mapEmbedUrl;
          if (welcomeText !== undefined) invitation.content.welcomeText = welcomeText;
          if (isPublished !== undefined) invitation.isPublished = isPublished;
+         if (rsvpDeadline !== undefined) {
+            if (!invitation.rsvp) invitation.rsvp = {};
+            invitation.rsvp.deadline = rsvpDeadline ? new Date(rsvpDeadline) : undefined;
+         }
 
          if (invitation.invitationType === "wedding") {
             if (brideName) invitation.couple.bride = brideName;
             if (groomName) invitation.couple.groom = groomName;
+            if (brideParents !== undefined) {
+               if (!invitation.parents) invitation.parents = {};
+               invitation.parents.brideParents = brideParents;
+            }
+            if (groomParents !== undefined) {
+               if (!invitation.parents) invitation.parents = {};
+               invitation.parents.groomParents = groomParents;
+            }
+            if (ceremonyType !== undefined) invitation.ceremonyType = Number(ceremonyType);
+            if (dressCode !== undefined) invitation.dressCode = Number(dressCode);
+            if (backgroundMusic !== undefined) invitation.backgroundMusic = backgroundMusic;
+
+            // Handle file uploads
+            const coverFile = req.files?.coverImage?.[0];
+            if (coverFile) {
+               invitation.coverImage = `/uploads/invitations/${coverFile.filename}`;
+            }
+            const galleryFiles = req.files?.galleryImages;
+            if (galleryFiles && galleryFiles.length > 0) {
+               const newPaths = galleryFiles.map((f) => `/uploads/invitations/${f.filename}`);
+               invitation.galleryImages = [...(invitation.galleryImages || []), ...newPaths];
+            }
          } else if (invitation.invitationType === "birthday") {
             if (celebrantName) invitation.celebrantName = celebrantName;
             if (age !== undefined) invitation.age = age;
