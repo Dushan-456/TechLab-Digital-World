@@ -12,7 +12,8 @@ const ManageInvitationsPage = () => {
   const fetchInvitations = async () => {
     try {
       const { data } = await API.get("/invitations");
-      setInvitations(data.data);
+      console.log("Fetched invitations response:", data);
+      setInvitations(data.data || []);
     } catch (error) {
       console.error("Failed to fetch invitations:", error);
     } finally {
@@ -49,12 +50,12 @@ const ManageInvitationsPage = () => {
       // Search Filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
-        const matchesCardId = inv.cardId?.toLowerCase().includes(query);
-        const matchesBride = inv.couple?.bride?.toLowerCase().includes(query);
-        const matchesGroom = inv.couple?.groom?.toLowerCase().includes(query);
-        const matchesCelebrant = inv.celebrantName?.toLowerCase().includes(query);
-        const matchesEventName = inv.eventName?.toLowerCase().includes(query);
-        const matchesLocation = inv.event?.location?.toLowerCase().includes(query);
+        const matchesCardId = inv.cardId?.toLowerCase()?.includes(query);
+        const matchesBride = inv.couple?.bride?.toLowerCase()?.includes(query);
+        const matchesGroom = inv.couple?.groom?.toLowerCase()?.includes(query);
+        const matchesCelebrant = inv.celebrantName?.toLowerCase()?.includes(query);
+        const matchesEventName = inv.eventName?.toLowerCase()?.includes(query);
+        const matchesLocation = inv.event?.location?.toLowerCase()?.includes(query);
         
         return matchesCardId || matchesBride || matchesGroom || matchesCelebrant || matchesEventName || matchesLocation;
       }
