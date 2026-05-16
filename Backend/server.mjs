@@ -9,6 +9,7 @@ import { errorHandler } from "./src/middleware/errorMiddleware.mjs";
 import helmet from "helmet";
 import morgan from "morgan";
 import connectDB from "./src/config/db.mjs";
+import { seedAdmin } from "./seed.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -76,7 +77,10 @@ server.use("/api/v1", rootRouter);
 server.use(errorHandler);
 
 // Connect to MongoDB and then start the server
-connectDB().then(() => {
+connectDB().then(async () => {
+  // Run seed
+  await seedAdmin();
+
   const httpServer = server.listen(PORT, () =>
     console.log(`🚀 Server is running on port ${PORT}`)
   );
