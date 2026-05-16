@@ -2,14 +2,12 @@ import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
 import User from "./src/models/User.mjs";
+import path from "path";
 
 dotenv.config();
 
-const seedAdmin = async () => {
+export const seedAdmin = async () => {
    try {
-      await mongoose.connect(process.env.MONGODB_URI);
-      console.log(`Connected to MongoDB for seeding...`);
-
       // Check if any admin exists
       const adminExists = await User.findOne({ role: "ADMIN" });
 
@@ -34,13 +32,26 @@ const seedAdmin = async () => {
       } else {
          console.log("Admin user already exists. Skipping seed.");
       }
-
-      await mongoose.disconnect();
-      console.log("Disconnected from MongoDB.");
    } catch (error) {
       console.error("Error seeding database:", error);
-      process.exit(1);
+      throw error;
    }
 };
 
-seedAdmin();
+// Check if the script is run directly
+import { fileURLToPath } from "url";
+if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
+   mongoose.connect(process.env.MONGODB_URI)
+      .then(async () => {
+         console.log(`Connected to MongoDB for seeding...`);
+         await seedAdmin();
+         await mongoose.disconnect();
+         console.log("Disconnected from MongoDB.");
+         process.exit(0);
+      })
+      .catch((error) => {
+         console.error("Error seeding database:", error);
+         process.exit(1);
+      });
+}
+
