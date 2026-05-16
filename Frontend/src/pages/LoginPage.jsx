@@ -28,7 +28,7 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
-      const { data } = await API.post("/users/login", {
+      const { data } = await API.post("users/login", {
         emailOrUsername,
         password,
       });
