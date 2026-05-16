@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { HiOutlineVolumeUp, HiOutlineVolumeOff, HiOutlineChevronDoubleDown, HiOutlineArrowNarrowDown, HiOutlineMap } from "react-icons/hi";
+import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
+import { HiOutlineVolumeUp, HiOutlineVolumeOff, HiOutlineChevronDoubleDown, HiOutlineArrowNarrowDown, HiOutlineMap, HiOutlineCalendar, HiOutlineX, HiOutlineHeart } from "react-icons/hi";
+import confetti from "canvas-confetti";
 import ringImg from "../../assets/images/ring.png";
+import coverImg from "../../assets/images/wedding.jpg";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL?.split("/api/v1")[0] || "";
 
@@ -19,15 +21,93 @@ const DRESS_LABELS = {
   3: { title: "Casual", desc: "Relaxed & Comfortable" },
 };
 
+const DecorativeDivider = () => {
+  const { scrollYProgress } = useScroll();
+  const draw = useTransform(scrollYProgress, [0, 1], [0, 1]);
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 0.4 }}
+      viewport={{ once: true }}
+      transition={{ duration: 1 }}
+      className="flex items-center justify-center gap-4 my-12"
+    >
+      <motion.div 
+        initial={{ scaleX: 0 }}
+        whileInView={{ scaleX: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 1.5, ease: "easeOut" }}
+        className="h-[1px] w-24 bg-gradient-to-r from-transparent to-[#8a6520] origin-right"
+      ></motion.div>
+      <div className="w-2.5 h-2.5 rotate-45 border border-[#8a6520] relative">
+        <div className="absolute inset-0.5 bg-[#8a6520]/20 rotate-45"></div>
+      </div>
+      <motion.div 
+        initial={{ scaleX: 0 }}
+        whileInView={{ scaleX: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 1.5, ease: "easeOut" }}
+        className="h-[1px] w-24 bg-gradient-to-l from-transparent to-[#8a6520] origin-left"
+      ></motion.div>
+    </motion.div>
+  );
+};
+
+const GoldParticles = () => {
+  return (
+    <div className="fixed inset-0 pointer-events-none z-10 overflow-hidden">
+      {[...Array(60)].map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute rounded-full shadow-[0_0_10px_rgba(201,168,76,0.3)]"
+          style={{
+            width: Math.random() * 3 + 1 + "px",
+            height: Math.random() * 3 + 1 + "px",
+            backgroundColor: i % 3 === 0 ? "#8a6520" : i % 2 === 0 ? "#c9a84c" : "#b8892e",
+          }}
+          initial={{ 
+            x: Math.random() * window.innerWidth, 
+            y: Math.random() * window.innerHeight,
+            opacity: Math.random() * 0.5 
+          }}
+          animate={{
+            y: [null, Math.random() * -300, Math.random() * 300],
+            x: [null, Math.random() * -150, Math.random() * 150],
+            opacity: [0.1, 0.7, 0.1],
+            scale: [1, 1.8, 1]
+          }}
+          transition={{
+            duration: 20 + Math.random() * 30,
+            repeat: Infinity,
+            ease: "linear"
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
 const RoyalGoldTemplate = ({ data, guestName, guestCount }) => {
+  const [isPreloading, setIsPreloading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const [flapOpen, setFlapOpen] = useState(false);
   const [cardSlide, setCardSlide] = useState(false);
   const [showContent, setShowContent] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [showWelcomeNote, setShowWelcomeNote] = useState(false);
   const audioRef = useRef(null);
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
+  const { scrollY } = useScroll();
+  const heroParallax = useTransform(scrollY, [0, 800], [0, 250]);
+
+  useEffect(() => {
+    // Simulate preloading for the custom loader
+    const timer = setTimeout(() => setIsPreloading(false), 2500);
+    return () => clearTimeout(timer);
+  }, []);
   useEffect(() => {
     const target = new Date(data.event.date);
     const interval = setInterval(() => {
@@ -53,12 +133,30 @@ const RoyalGoldTemplate = ({ data, guestName, guestCount }) => {
   const handleOpen = () => {
     if (flapOpen || isOpen) return;
     setFlapOpen(true);
-    setTimeout(() => {
-      setCardSlide(true);
-      if (audioRef.current) { audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {}); }
-    }, 900);
+    setTimeout(() => { setCardSlide(true); if (audioRef.current) { audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {}); } }, 900);
     setTimeout(() => { setShowContent(true); }, 3200);
-    setTimeout(() => { setIsOpen(true); }, 4000);
+    setTimeout(() => { setIsOpen(true); setShowWelcomeNote(true); setTimeout(() => setShowWelcomeNote(false), 5000); }, 4000);
+  };
+
+  const handleRSVP = (e) => {
+    e.preventDefault();
+    confetti({
+      particleCount: 150,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ["#8a6520", "#c9a84c", "#fdf8f0"]
+    });
+    // Add submission logic here
+  };
+
+  const addToCalendar = () => {
+    const eventDate = new Date(data.event.date);
+    const start = eventDate.toISOString().replace(/-|:|\.\d\d\d/g, "");
+    const end = new Date(eventDate.getTime() + 2 * 60 * 60 * 1000).toISOString().replace(/-|:|\.\d\d\d/g, "");
+    const title = `${data.couple.bride} & ${data.couple.groom}'s Wedding`;
+    const details = `Join us for the wedding of ${data.couple.bride} and ${data.couple.groom} at ${data.event.location}`;
+    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${start}/${end}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(data.event.location)}`;
+    window.open(url, "_blank");
   };
 
   const formattedDate = (() => {
@@ -67,7 +165,7 @@ const RoyalGoldTemplate = ({ data, guestName, guestCount }) => {
   })();
 
   const hasCoverImage = !!data.coverImage;
-  const coverUrl = hasCoverImage ? `${API_BASE}${data.coverImage}` : null;
+  const coverUrl = hasCoverImage ? `${API_BASE}${data.coverImage}` : coverImg;
   const hasParents = data.parents?.brideParents || data.parents?.groomParents;
   const hasGallery = data.galleryImages?.length > 0;
   const hasMap = !!data.event?.mapEmbedUrl;
@@ -102,10 +200,76 @@ const RoyalGoldTemplate = ({ data, guestName, guestCount }) => {
   })();
 
   return (
-    <div style={{ fontFamily: "'Cormorant Garamond', 'Georgia', serif" }} className="min-h-screen bg-[#fdf8f0] text-[#4a3f35] overflow-x-hidden">
+    <div style={{ fontFamily: "'Cormorant Garamond', 'Georgia', serif" }} className="min-h-screen bg-[#fdf8f0] text-[#4a3f35] overflow-x-hidden relative">
+      <style>
+        {`
+          @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
+          .signature-font { font-family: 'Great Vibes', cursive; }
+          .paper-texture {
+            background-image: url("https://www.transparenttextures.com/patterns/cream-paper.png");
+            background-repeat: repeat;
+          }
+        `}
+      </style>
+
+      {/* ── CUSTOM LOADER ────────────────────────────────────── */}
+      <AnimatePresence>
+        {isPreloading && (
+          <motion.div 
+            exit={{ opacity: 0 }} 
+            className="fixed inset-0 z-[200] bg-[#fdf8f0] flex flex-col items-center justify-center"
+          >
+            <motion.div 
+              animate={{ 
+                scale: [1, 1.1, 1],
+                rotate: [0, 5, -5, 0]
+              }}
+              transition={{ repeat: Infinity, duration: 2.5 }}
+              className="w-24 h-24 flex items-center justify-center relative"
+            >
+              <svg viewBox="0 0 60 60" className="w-full h-full drop-shadow-xl">
+                <circle cx="30" cy="30" r="28" fill="#c9a84c" />
+                <circle cx="30" cy="30" r="20" fill="#b8892e" />
+                <text x="50%" y="52%" textAnchor="middle" dominantBaseline="middle" fill="#fdf8f0" fontSize="11" fontWeight="bold" fontStyle="italic">
+                  RG
+                </text>
+              </svg>
+              <motion.div 
+                initial={{ opacity: 0, scale: 2 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.5, duration: 0.5 }}
+                className="absolute inset-0 flex items-center justify-center"
+              >
+                <div className="w-full h-full rounded-full border-2 border-[#8a6520]/20 animate-ping"></div>
+              </motion.div>
+            </motion.div>
+            <p className="mt-8 text-xs uppercase font-bold tracking-[0.5em] text-[#8a6520]">Preparing Your Invitation</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="fixed inset-0 paper-texture opacity-30 pointer-events-none z-0" />
+      <GoldParticles />
+
       {data.backgroundMusic && (
         <audio ref={audioRef} loop src={`${API_BASE}${data.backgroundMusic}`} />
       )}
+
+      {/* ── WELCOME NOTE ──────────────────────────────────────── */}
+      <AnimatePresence>
+        {showWelcomeNote && (
+          <motion.div 
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 50, opacity: 0 }}
+            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[110] bg-white/80 backdrop-blur-md border border-[#8a6520]/20 px-8 py-3 rounded-full shadow-lg"
+          >
+            <p className="text-sm signature-font text-[#8a6520] whitespace-nowrap">
+              So glad you could join us, {guestName || "dear guest"}!
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── ENVELOPE COVER ─────────────────────────────────────── */}
       <AnimatePresence>
@@ -196,48 +360,108 @@ const RoyalGoldTemplate = ({ data, guestName, guestCount }) => {
           )}
 
           {/* ── HERO SECTION ─────────────────────────────────── */}
-          <section className="min-h-screen flex flex-col items-center justify-center text-center relative px-4 pt-8">
+          <section className="min-h-screen flex flex-col items-center justify-center text-center relative px-4 overflow-hidden pb-20">
             
-            {hasCoverImage && (
-              <div className="absolute top-0 left-0 w-full h-[70vh]" style={{ backgroundImage: `url(${coverUrl})`, backgroundSize: "cover", backgroundPosition: "center" }}>
-                <div className="absolute inset-0 bg-gradient-to-b from-[#fdf8f0]/95 via-[#fdf8f0]/65 to-[#fdf8f0]" />
+            {coverUrl && (
+              <div className="absolute top-0 left-0 w-full h-[70vh] overflow-hidden z-0">
+                <motion.div 
+                  initial={{ scale: 1.15, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  style={{ 
+                    backgroundImage: `url(${coverUrl})`, 
+                    backgroundSize: "cover", 
+                    backgroundPosition: "center",
+                    y: heroParallax,
+                    height: "130%",
+                    top: "-15%"
+                  }}
+                  transition={{ duration: 8, ease: "easeOut" }}
+                  className="absolute inset-0 w-full" 
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#fdf8f0]/99 via-[#fdf8f0]/60 to-[#fdf8f0]" />
               </div>
             )}
             
-            <motion.div initial={{ y: 30, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} transition={{ duration: 1 }}
-              className="relative z-10 w-full max-w-2xl pt-24 pb-12">
-              
-              <p className="text-[11px] md:text-xs uppercase font-bold tracking-[0.4em] text-[#8a6520]">
-                You are cordially invited
-              </p>
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              transition={{ duration: 2 }}
+              className="relative z-10 w-full max-w-4xl pt-20 pb-12 flex flex-col items-center"
+            >
+              <motion.p 
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.5, duration: 1 }}
+                className="text-[13px] md:text-sm uppercase font-bold tracking-[0.6em] text-[#8a6520] mb-8"
+              >
+                The Wedding Celebration of
+              </motion.p>
               
               {/* Flipping Ring (Continuous Mirror) */}
               <motion.div 
-                animate={{ scaleX: [1, -1, 1] }} 
-                transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-                className="mx-auto w-24 h-24 md:w-32 md:h-32 my-10"
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.8, type: "spring", stiffness: 50 }}
               >
-                <img src={ringImg} alt="Ring" className="w-full h-full object-contain" />
+                <motion.div 
+                  animate={{ scaleX: [1, -1, 1], rotate: [0, 5, 0, -5, 0] }} 
+                  transition={{ 
+                    scaleX: { repeat: Infinity, duration: 5, ease: "easeInOut" },
+                    rotate: { repeat: Infinity, duration: 6, ease: "easeInOut" }
+                  }}
+                  className="mx-auto w-24 h-24 md:w-36 md:h-36 mb-12"
+                >
+                  <img src={ringImg} alt="Ring" className="w-full h-full object-contain drop-shadow-[0_10px_15px_rgba(138,101,32,0.2)]" />
+                </motion.div>
               </motion.div>
               
-              <div className="space-y-1">
-                <h1 className="text-6xl md:text-8xl tracking-tight text-[#8a6520]" style={{ fontFamily: "'Cormorant Garamond', serif", textShadow: "0 2px 10px rgba(255,255,255,0.3)" }}>
+              <div className="space-y-4">
+                <motion.h1 
+                  initial={{ y: 40, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 1.2, duration: 1.2, ease: "easeOut" }}
+                  className="text-7xl md:text-[140px] uppercase tracking-tighter text-[#8a6520] leading-none" 
+                  style={{ fontFamily: "'Cormorant Garamond', serif", textShadow: "0 20px 40px rgba(138,101,32,0.25)" }}
+                >
                   {data.couple.bride}
-                </h1>
-                <p className="text-4xl md:text-5xl italic text-[#8a6520]" style={{ fontFamily: "'Cormorant Garamond', serif" }}>&</p>
-                <h1 className="text-6xl md:text-8xl tracking-tight text-[#8a6520]" style={{ fontFamily: "'Cormorant Garamond', serif", textShadow: "0 2px 10px rgba(255,255,255,0.3)" }}>
+                </motion.h1>
+                <motion.p 
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 1.5, duration: 0.8 }}
+                  className="text-5xl md:text-[90px] uppercase italic text-[#8a6520]/60" 
+                  style={{ fontFamily: "'Cormorant Garamond', serif" }}
+                >&</motion.p>
+                <motion.h1 
+                  initial={{ y: 40, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 1.8, duration: 1.2, ease: "easeOut" }}
+                  className="text-7xl md:text-[140px] uppercase tracking-tighter text-[#8a6520] leading-none" 
+                  style={{ fontFamily: "'Cormorant Garamond', serif", textShadow: "0 20px 40px rgba(138,101,32,0.25)" }}
+                >
                   {data.couple.groom}
-                </h1>
+                </motion.h1>
               </div>
-              <div className="pt-10 flex flex-col items-center gap-3">
-                <div className="w-16 h-[1px] bg-[#8a6520]/40 mb-2"></div>
-                <p className="text-[13px] font-bold uppercase tracking-[0.25em] text-[#8a6520]">
-                  {formattedDate}
-                </p>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#8a6520]">
-                  {data.event.location}
-                </p>
-              </div>
+
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 2.2, duration: 1 }}
+                className="pt-16 flex flex-col items-center gap-6"
+              >
+                <div className="w-24 h-[1px] bg-gradient-to-r from-transparent via-[#8a6520] to-transparent"></div>
+                <div className="space-y-3">
+                  <p className="text-xl md:text-2xl font-light italic tracking-[0.1em] text-[#4a3f35]">
+                    Save the Date
+                  </p>
+                  <p className="text-[18px] md:text-2xl font-bold uppercase tracking-[0.3em] text-[#8a6520]">
+                    {formattedDate}
+                  </p>
+                  <p className="text-[14px] md:text-lg font-medium uppercase tracking-[0.2em] text-[#8a6520]/70">
+                    {data.event.location}
+                  </p>
+                </div>
+              </motion.div>
             </motion.div>
 
             <motion.div 
@@ -251,7 +475,7 @@ const RoyalGoldTemplate = ({ data, guestName, guestCount }) => {
                 transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
                 className="flex flex-col items-center gap-1"
               >
-                <div className="w-[1px] h-12 bg-gradient-to-b from-transparent to-[#8a6520]"></div>
+                <div className="w-[1px] h-12  bg-gradient-to-b from-transparent to-[#8a6520]"></div>
                 <HiOutlineArrowNarrowDown className="text-[#8a6520] text-xl -mt-1" />
               </motion.div>
               <span className="text-[8px] uppercase font-bold tracking-[0.5em] text-[#8a6520]/40 mt-4">Scroll</span>
@@ -260,28 +484,38 @@ const RoyalGoldTemplate = ({ data, guestName, guestCount }) => {
 
           {/* ── PARENTS SECTION ──────────────────────────────── */}
           {hasParents && (
-            <section className="pt-10 px-8 text-center bg-[#fdf8f0]">
-              <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 1 }} className="max-w-3xl mx-auto">
-                <div className="flex flex-col  gap-10">
-                  {data.parents.brideParents && (
-                    <div>
-                      <p className="text-2xl font-light italic">{data.parents.brideParents}</p>
-                    </div>
-                  )}
-                  <div>
+            <section className="py-20 px-8 text-center bg-[#fdf8f0]">
+              <motion.div 
+                initial={{ opacity: 0, y: 40 }} 
+                whileInView={{ opacity: 1, y: 0 }} 
+                viewport={{ once: true }} 
+                transition={{ duration: 1.2 }} 
+                className="max-w-4xl mx-auto"
+              >
+                <div className="flex flex-col items-center gap-12">
+                  <div className="space-y-4">
+                    <p className="text-[11px] uppercase font-bold tracking-[0.5em] text-[#8a6520]/50 mb-6">Honoring Our Heritage</p>
+                    {data.parents.brideParents && (
+                      <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ delay: 0.3 }} className="text-3xl md:text-4xl font-light italic text-[#4a3f35]">{data.parents.brideParents}</motion.p>
+                    )}
+                  </div>
 
-                  <h3 className="text-xs uppercase font-bold " style={{ letterSpacing: "0.4em", color: "#8a6520" }}>Together With</h3>
+                  <div className="relative w-full flex items-center justify-center">
+                    <div className="absolute left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#8a6520]/20 to-transparent"></div>
+                    <div className="relative bg-[#fdf8f0] px-8">
+                      <h3 className="text-xs md:text-sm uppercase font-bold tracking-[0.6em] text-[#8a6520]">Together With</h3>
+                    </div>
                   </div>
 
                   {data.parents.groomParents && (
-                    <div>
-                      <p className="text-2xl font-light italic">{data.parents.groomParents}</p>
-                    </div>
+                    <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ delay: 0.6 }} className="text-3xl md:text-4xl font-light italic text-[#4a3f35]">{data.parents.groomParents}</motion.p>
                   )}
                 </div>
               </motion.div>
             </section>
           )}
+
+          <DecorativeDivider />
 
           {/* ── GUEST PERSONALIZATION ────────────────────────── */}
           <section className=" px-8 text-center bg-[#fdf8f0]">
@@ -299,32 +533,52 @@ const RoyalGoldTemplate = ({ data, guestName, guestCount }) => {
           </section>
 
           {/* ── COUNTDOWN ────────────────────────────────────── */}
-          <section className="py-24 bg-[#fdf8f0] text-center">
-            <h3 className="text-xs uppercase font-bold mb-12" style={{ letterSpacing: "0.4em", color: "#8a6520" }}>Counting Down To Forever</h3>
-            <div className="flex justify-center gap-4 md:gap-12">
-              {[{ label: "Days", value: timeLeft.days }, { label: "Hours", value: timeLeft.hours }, { label: "Mins", value: timeLeft.minutes }, { label: "Secs", value: timeLeft.seconds }].map((item, idx) => (
-                <div key={idx} className="flex flex-col items-center justify-center w-20 h-24 md:w-32 md:h-36 border border-[#8a6520]/20 rounded-md bg-white/30 backdrop-blur-sm shadow-sm transition-transform hover:scale-105">
-                  <span className="text-3xl md:text-5xl font-light mb-1" style={{ color: "#4a3f35" }}>{String(item.value).padStart(2, "0")}</span>
-                  <span className="text-[9px] md:text-[10px] uppercase font-bold" style={{ letterSpacing: "0.2em", color: "#8a6520" }}>{item.label}</span>
-                </div>
-              ))}
+          <section className="py-20 bg-[#fdf8f0] text-center relative overflow-hidden">
+            <div className="absolute inset-0 opacity-[0.2] pointer-events-none flex items-center justify-center">
+              <img src={coverUrl} alt="" className="absolute top-0 left-0 w-full h-full object-cover  z-0 scale-110" />
             </div>
+            
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 1 }} className="relative z-10">
+              <h3 className="text-xs md:text-sm uppercase font-bold mb-16 tracking-[0.6em] text-[#8a6520]">Counting Down To Forever</h3>
+              <div className="flex justify-center flex-wrap gap-6 md:gap-10 px-4">
+                {[{ label: "Days", value: timeLeft.days }, { label: "Hours", value: timeLeft.hours }, { label: "Mins", value: timeLeft.minutes }, { label: "Secs", value: timeLeft.seconds }].map((item, idx) => (
+                  <motion.div 
+                    key={idx} 
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: idx * 0.15, duration: 0.8, ease: "easeOut" }}
+                    className="flex flex-col items-center justify-center w-28 h-32 md:w-40 md:h-48 border border-[#8a6520]/10 rounded-3xl bg-white/40 backdrop-blur-xl shadow-[0_15px_40px_rgba(138,101,32,0.06)] hover:border-[#8a6520]/30 transition-all duration-500 group relative overflow-hidden"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                    <span className="text-4xl md:text-6xl font-light mb-2 text-[#4a3f35] group-hover:scale-110 transition-transform duration-700 ease-out">{String(item.value).padStart(2, "0")}</span>
+                    <span className="text-[10px] md:text-[12px] uppercase font-bold tracking-[0.3em] text-[#8a6520]/60">{item.label}</span>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
           </section>
+
+          <DecorativeDivider />
 
           {/* ── CEREMONY, DRESS CODE & DETAILS ───────────────── */}
           <section className="py-24 px-8 bg-[#fdf8f0]">
             <div className="max-w-4xl mx-auto grid md:grid-cols-3 gap-12">
               {/* Ceremony */}
-              <div className="space-y-6 text-center">
-                <h3 className="text-2xl pb-4" style={{ borderBottom: "1px solid rgba(138,101,32,0.2)" }}>Ceremony</h3>
+              <div className="space-y-6 text-center group">
+                <h3 className="text-2xl pb-4 border-b border-[#8a6520]/20 group-hover:border-[#8a6520]/60 transition-colors">Ceremony</h3>
                 {displayTime && (
-                  <p className="text-sm uppercase font-bold" style={{ letterSpacing: "0.2em", color: "#8a6520" }}>{displayTime}</p>
-                )}
-                {formattedDate && (
-                  <p className="text-sm uppercase font-bold" style={{ letterSpacing: "0.2em", color: "#8a6520" }}>{formattedDate}</p>
+                  <p className="text-lg uppercase font-bold tracking-[0.2em] text-[#8a6520]">{displayTime}</p>
                 )}
                 <p className="text-lg">{ceremonyLabel}</p>
-                <p className="font-light leading-relaxed" style={{ color: "#8a8a8a" }}>{data.event.location}</p>
+                <p className="font-light leading-relaxed text-[#8a8a8a]">{data.event.location}</p>
+                <button 
+                  onClick={addToCalendar}
+                  className="mt-4 inline-flex items-center gap-2 text-[10px] uppercase font-bold tracking-[0.2em] text-[#8a6520] hover:scale-105 transition-transform"
+                >
+                  <HiOutlineCalendar className="text-lg" />
+                  Add to Calendar
+                </button>
               </div>
 
               {/* Dress Code */}
@@ -345,20 +599,51 @@ const RoyalGoldTemplate = ({ data, guestName, guestCount }) => {
             </div>
           </section>
 
-          {/* ── GALLERY ──────────────────────────────────────── */}
           {hasGallery && (
             <section className="py-24 px-8 bg-[#fdf8f0]">
-              <h3 className="text-xs uppercase font-bold mb-12 text-center" style={{ letterSpacing: "0.4em", color: "#8a6520" }}>Our Moments</h3>
-              <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-3 gap-4">
+              <h3 className="text-xs uppercase font-bold mb-12 text-center tracking-[0.4em] text-[#8a6520]">Our Moments</h3>
+              <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-3 gap-6">
                 {data.galleryImages.map((img, idx) => (
-                  <motion.div key={idx} whileHover={{ scale: 1.03 }} transition={{ duration: 0.3 }}
-                    className="aspect-square rounded-lg overflow-hidden shadow-lg">
+                  <motion.div 
+                    key={idx} 
+                    whileHover={{ scale: 1.05, y: -5 }} 
+                    transition={{ duration: 0.4 }}
+                    className="aspect-[4/5] rounded-2xl overflow-hidden shadow-[0_15px_35px_rgba(0,0,0,0.1)] cursor-zoom-in"
+                    onClick={() => setSelectedImage(`${API_BASE}${img}`)}
+                  >
                     <img src={`${API_BASE}${img}`} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover" loading="lazy" />
                   </motion.div>
                 ))}
               </div>
             </section>
           )}
+
+          {/* ── PHOTO LIGHTBOX ───────────────────────────────── */}
+          <AnimatePresence>
+            {selectedImage && (
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[150] bg-[#fdf8f0]/95 backdrop-blur-xl flex items-center justify-center p-4 md:p-12"
+                onClick={() => setSelectedImage(null)}
+              >
+                <motion.button 
+                  className="absolute top-8 right-8 text-[#8a6520] text-3xl z-20"
+                  onClick={() => setSelectedImage(null)}
+                >
+                  <HiOutlineX />
+                </motion.button>
+                <motion.img 
+                  layoutId={selectedImage}
+                  src={selectedImage} 
+                  className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+                  initial={{ scale: 0.9 }}
+                  animate={{ scale: 1 }}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* ── MAP EMBED ────────────────────────────────────── */}
           {hasMap && (
@@ -391,7 +676,7 @@ const RoyalGoldTemplate = ({ data, guestName, guestCount }) => {
                 <p className="text-[10px] uppercase font-bold tracking-[0.3em] text-[#8a6520]/70">Your presence is the greatest gift</p>
               </div>
 
-              <form className="space-y-12 text-left pt-8">
+              <form onSubmit={handleRSVP} className="space-y-12 text-left pt-8">
                 {/* Name Field */}
                 <div className="relative group">
                   <input 
@@ -456,9 +741,10 @@ const RoyalGoldTemplate = ({ data, guestName, guestCount }) => {
 
                 <div className="pt-10">
                   <button 
-                    type="button" 
-                    className="w-full py-6 border border-[#8a6520] text-[#8a6520] text-xs font-bold uppercase tracking-[0.4em] transition-all duration-500 hover:bg-[#8a6520] hover:text-[#fdf8f0] active:scale-95"
+                    type="submit" 
+                    className="w-full py-6 border border-[#8a6520] text-[#8a6520] text-xs font-bold uppercase tracking-[0.4em] transition-all duration-500 hover:bg-[#8a6520] hover:text-[#fdf8f0] active:scale-95 shadow-lg flex items-center justify-center gap-3"
                   >
+                    <HiOutlineHeart className="text-lg" />
                     Confirm Attendance
                   </button>
                 </div>
