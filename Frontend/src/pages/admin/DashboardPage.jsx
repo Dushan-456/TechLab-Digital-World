@@ -31,7 +31,7 @@ const DashboardPage = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const { data } = await API.get("/invitations/stats/overview");
+        const { data } = await API.get("invitations/stats/overview");
         setStats(data.data);
       } catch (error) {
         console.error("Failed to fetch stats:", error);
