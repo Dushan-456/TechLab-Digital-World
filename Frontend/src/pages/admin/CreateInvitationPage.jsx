@@ -38,6 +38,7 @@ const AUDIO_OPTIONS = [
   { value: "", label: "No Background Music" },
   { value: "/audio/music1.mp3", label: "Romantic Piano (Music 1)" },
   { value: "/audio/music2.mp3", label: "Wedding March (Music 2)" },
+  { value: "/audio/music3.mp3", label: "Wedding Bells (Music 3)" },
 ];
 
 const CreateInvitationPage = () => {
