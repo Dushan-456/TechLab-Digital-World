@@ -11,7 +11,7 @@ const ManageInvitationsPage = () => {
 
   const fetchInvitations = async () => {
     try {
-      const { data } = await API.get("/invitations");
+      const { data } = await API.get("invitations");
       console.log("Fetched invitations response:", data);
       setInvitations(data.data || []);
     } catch (error) {
@@ -26,7 +26,7 @@ const ManageInvitationsPage = () => {
   const handleDelete = async (cardId) => {
     if (!window.confirm(`Delete invitation "${cardId}"? This cannot be undone.`)) return;
     try {
-      await API.delete(`/invitations/${cardId}`);
+      await API.delete(`invitations/${cardId}`);
       setInvitations((prev) => prev.filter((inv) => inv.cardId !== cardId));
     } catch (error) {
       console.error("Failed to delete:", error);
@@ -35,7 +35,7 @@ const ManageInvitationsPage = () => {
 
   const togglePublish = async (cardId, currentStatus) => {
     try {
-      await API.patch(`/invitations/${cardId}`, { isPublished: !currentStatus });
+      await API.patch(`invitations/${cardId}`, { isPublished: !currentStatus });
       setInvitations((prev) => prev.map((inv) => inv.cardId === cardId ? { ...inv, isPublished: !currentStatus } : inv));
     } catch (error) {
       console.error("Failed to update:", error);
