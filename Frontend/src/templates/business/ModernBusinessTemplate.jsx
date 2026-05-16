@@ -4,7 +4,7 @@ import { FaLinkedin, FaGithub, FaTwitter, FaInstagram } from "react-icons/fa";
 
 const ModernBusinessTemplate = ({ data }) => {
   const { personalInfo, contactInfo, socialLinks } = data;
-  const baseUrl = import.meta.env.VITE_API_BASE_URL.replace('/api/v1', '');
+  const baseUrl = import.meta.env.VITE_API_BASE_URL.split('/api/v1')[0];
   const profilePicUrl = personalInfo?.profilePic ? `${baseUrl}${personalInfo.profilePic}` : null;
 
   return (
