@@ -10,7 +10,7 @@ const ManageBusinessCardsPage = () => {
 
   const fetchCards = async () => {
     try {
-      const { data } = await API.get("/business-cards");
+      const { data } = await API.get("business-cards");
       setCards(data.data);
     } catch (error) {
       console.error("Failed to fetch business cards:", error);
@@ -24,7 +24,7 @@ const ManageBusinessCardsPage = () => {
   const handleDelete = async (cardId) => {
     if (!window.confirm(`Delete business card "${cardId}"? This cannot be undone.`)) return;
     try {
-      await API.delete(`/business-cards/${cardId}`);
+      await API.delete(`business-cards/${cardId}`);
       setCards((prev) => prev.filter((c) => c.cardId !== cardId));
     } catch (error) {
       console.error("Failed to delete:", error);
@@ -33,7 +33,7 @@ const ManageBusinessCardsPage = () => {
 
   const togglePublish = async (cardId, currentStatus) => {
     try {
-      await API.patch(`/business-cards/${cardId}`, { isPublished: !currentStatus });
+      await API.patch(`business-cards/${cardId}`, { isPublished: !currentStatus });
       setCards((prev) => prev.map((c) => c.cardId === cardId ? { ...c, isPublished: !currentStatus } : c));
     } catch (error) {
       console.error("Failed to update:", error);
