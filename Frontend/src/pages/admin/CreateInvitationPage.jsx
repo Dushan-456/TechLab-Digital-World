@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import API from "../../services/api";
 import { HiOutlineCheckCircle, HiOutlineClipboardCopy, HiOutlinePhotograph, HiOutlineX } from "react-icons/hi";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace("/api/v1", "") || "";
+const API_BASE = import.meta.env.VITE_API_BASE_URL?.split("/api/v1")[0] || "";
 
 const templates = {
   wedding: [
@@ -87,7 +87,7 @@ const CreateInvitationPage = () => {
     if (isEditMode) {
       const fetchInvitation = async () => {
         try {
-          const { data } = await API.get(`/invitations/${editCardId}`);
+          const { data } = await API.get(`invitations/${editCardId}`);
           const inv = data.data;
           setInvitationType(inv.invitationType);
           setForm({
@@ -219,10 +219,10 @@ const CreateInvitationPage = () => {
       let data;
 
       if (isEditMode) {
-        const res = await API.patch(`/invitations/${editCardId}`, payload);
+        const res = await API.patch(`invitations/${editCardId}`, payload);
         data = res.data;
       } else {
-        const res = await API.post("/invitations", payload);
+        const res = await API.post("invitations", payload);
         data = res.data;
       }
       setSuccess(data);
