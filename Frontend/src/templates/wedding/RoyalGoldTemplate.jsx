@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { HiOutlineVolumeUp, HiOutlineVolumeOff, HiOutlineChevronDoubleDown, HiOutlineArrowNarrowDown, HiOutlineMap } from "react-icons/hi";
 import ringImg from "../../assets/images/ring.png";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace("/api/v1", "") || "";
+const API_BASE = import.meta.env.VITE_API_BASE_URL?.split("/api/v1")[0] || "";
 
 const CEREMONY_LABELS = {
   1: "Poruwa Ceremony & Tradition",
