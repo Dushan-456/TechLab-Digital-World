@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useLocation } from "react-router-dom";
-import axios from "axios";
+import API from "../services/api";
 import EtherealTemplate from "./wedding/EtherealTemplate";
 import LuminaTemplate from "./wedding/LuminaTemplate";
 import KineticTemplate from "./wedding/KineticTemplate";
@@ -8,7 +8,6 @@ import RoyalGoldTemplate from "./wedding/RoyalGoldTemplate";
 import JoyfulTemplate from "./birthday/JoyfulTemplate";
 import CorporateTemplate from "./event/CorporateTemplate";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const templateMap = {
   ethereal: EtherealTemplate,
@@ -32,7 +31,7 @@ const CardViewer = () => {
   useEffect(() => {
     const fetchCard = async () => {
       try {
-        const res = await axios.get(`${API_BASE}/invitations/${cardId}`);
+        const res = await API.get(`invitations/${cardId}`);
         setData(res.data.data);
       } catch (err) {
         setError(err.response?.status === 404 ? "Invitation not found." : "Something went wrong.");
@@ -42,6 +41,7 @@ const CardViewer = () => {
     };
     if (cardId) fetchCard();
   }, [cardId]);
+
 
   if (loading) {
     return (
