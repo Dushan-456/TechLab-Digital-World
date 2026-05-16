@@ -1,11 +1,9 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import axios from "axios";
+import API from "../services/api";
 import ModernBusinessTemplate from "./business/ModernBusinessTemplate";
 import MinimalBusinessTemplate from "./business/MinimalBusinessTemplate";
 import ClassicBusinessTemplate from "./business/ClassicBusinessTemplate";
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const templateMap = {
   modern: ModernBusinessTemplate,
@@ -22,7 +20,7 @@ const BusinessCardViewer = () => {
   useEffect(() => {
     const fetchCard = async () => {
       try {
-        const res = await axios.get(`${API_BASE}/business-cards/${cardId}`);
+        const res = await API.get(`business-cards/${cardId}`);
         setData(res.data.data);
       } catch (err) {
         setError(err.response?.status === 404 ? "Card not found." : "Something went wrong.");
@@ -32,6 +30,7 @@ const BusinessCardViewer = () => {
     };
     if (cardId) fetchCard();
   }, [cardId]);
+
 
   if (loading) {
     return (
