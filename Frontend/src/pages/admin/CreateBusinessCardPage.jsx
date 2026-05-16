@@ -32,7 +32,7 @@ const CreateBusinessCardPage = () => {
     if (isEditMode) {
       const fetchCard = async () => {
         try {
-          const { data } = await API.get(`/business-cards/${editCardId}`);
+          const { data } = await API.get(`business-cards/${editCardId}`);
           const card = data.data;
           setForm({
             cardId: card.cardId,
@@ -89,7 +89,7 @@ const CreateBusinessCardPage = () => {
     setError("");
 
     try {
-      const { data } = await API.post("/upload-image", formData, {
+      const { data } = await API.post("upload-image", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       handleChange("personalInfo", "profilePic", data.imageUrl);
@@ -109,10 +109,10 @@ const CreateBusinessCardPage = () => {
     try {
       let data;
       if (isEditMode) {
-        const res = await API.patch(`/business-cards/${editCardId}`, form);
+        const res = await API.patch(`business-cards/${editCardId}`, form);
         data = res.data;
       } else {
-        const res = await API.post("/business-cards", form);
+        const res = await API.post("business-cards", form);
         data = res.data;
       }
       setSuccess(data);
@@ -191,7 +191,7 @@ const CreateBusinessCardPage = () => {
               <div className="flex flex-col items-center gap-3">
                  <div className="w-24 h-24 rounded-full bg-gray-100 border-2 border-gray-100 overflow-hidden flex items-center justify-center relative group">
                     {form.personalInfo.profilePic ? (
-                       <img src={import.meta.env.VITE_API_BASE_URL.replace('/api/v1', '') + form.personalInfo.profilePic} alt="Profile" className="w-full h-full object-cover" />
+                       <img src={import.meta.env.VITE_API_BASE_URL.split('/api/v1')[0] + form.personalInfo.profilePic} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
                        <HiOutlineUserCircle className="text-gray-300 text-6xl" />
                     )}
