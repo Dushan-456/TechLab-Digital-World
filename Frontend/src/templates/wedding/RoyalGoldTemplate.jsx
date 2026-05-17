@@ -561,7 +561,6 @@ const RoyalGoldTemplate = ({ data, guestName, guestCount }) => {
 
           <DecorativeDivider />
 
-          {/* ── CEREMONY, DRESS CODE & DETAILS ───────────────── */}
           <section className="py-24 px-8 bg-[#fdf8f0]">
             <div className="max-w-4xl mx-auto grid md:grid-cols-3 gap-12">
               {/* Ceremony */}
