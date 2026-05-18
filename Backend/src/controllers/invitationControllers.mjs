@@ -26,7 +26,7 @@ class InvitationControllers {
          invitationType, cardId, templateId,
          eventDate, eventLocation, eventTime, mapEmbedUrl, welcomeText,
          brideName, groomName, brideParents, groomParents,
-         ceremonyType, dressCode, backgroundMusic,
+         ceremonyType, dressCode, receptionType, backgroundMusic,
          celebrantName, age,
          eventName, organizer, description,
          rsvpDeadline
@@ -71,6 +71,7 @@ class InvitationControllers {
                galleryImages: galleryFiles.map((f) => `/uploads/invitations/${f.filename}`),
                ceremonyType: ceremonyType ? Number(ceremonyType) : 1,
                dressCode: dressCode ? Number(dressCode) : 1,
+               receptionType: receptionType ? Number(receptionType) : 1,
                backgroundMusic: backgroundMusic || undefined,
             });
          } else if (invitationType === "birthday") {
@@ -185,7 +186,7 @@ class InvitationControllers {
          templateId, eventDate, eventLocation, eventTime, mapEmbedUrl,
          welcomeText, isPublished,
          brideName, groomName, brideParents, groomParents,
-         ceremonyType, dressCode, backgroundMusic,
+         ceremonyType, dressCode, receptionType, backgroundMusic,
          celebrantName, age, eventName, organizer, description,
          rsvpDeadline
       } = req.body;
@@ -222,6 +223,7 @@ class InvitationControllers {
             }
             if (ceremonyType !== undefined) invitation.ceremonyType = Number(ceremonyType);
             if (dressCode !== undefined) invitation.dressCode = Number(dressCode);
+            if (receptionType !== undefined) invitation.receptionType = Number(receptionType);
             if (backgroundMusic !== undefined) invitation.backgroundMusic = backgroundMusic;
 
             // Handle file uploads
