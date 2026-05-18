@@ -7,19 +7,10 @@ import coverImg from "../../assets/images/wedding.jpg";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL?.split("/api/v1")[0] || "";
 
-const CEREMONY_LABELS = {
-  1: "Poruwa Ceremony & Tradition",
-  2: "Church Wedding Ceremony",
-  3: "Registry Wedding",
-  4: "Hindu Wedding Ceremony",
-  5: "Muslim Nikah Ceremony",
-};
-
-const DRESS_LABELS = {
-  1: { title: "Formal", desc: "Black Tie / Evening Wear" },
-  2: { title: "Semi-Formal", desc: "Cocktail Attire" },
-  3: { title: "Casual", desc: "Relaxed & Comfortable" },
-};
+// Fallback labels in case card settings haven't loaded
+const CEREMONY_FALLBACK = "Wedding Ceremony";
+const DRESS_FALLBACK = { title: "Formal", desc: "Evening Wear" };
+const RECEPTION_FALLBACK = { title: "Evening Banquet", desc: "Dinner & Celebration" };
 
 const DecorativeDivider = () => {
   const { scrollYProgress } = useScroll();
@@ -88,7 +79,7 @@ const GoldParticles = () => {
   );
 };
 
-const RoyalGoldTemplate = ({ data, guestName, guestCount }) => {
+const RoyalGoldTemplate = ({ data, guestName, guestCount, cardSettings = {} }) => {
   const [isPreloading, setIsPreloading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const [flapOpen, setFlapOpen] = useState(false);
@@ -169,8 +160,23 @@ const RoyalGoldTemplate = ({ data, guestName, guestCount }) => {
   const hasParents = data.parents?.brideParents || data.parents?.groomParents;
   const hasGallery = data.galleryImages?.length > 0;
   const hasMap = !!data.event?.mapEmbedUrl;
-  const ceremonyLabel = CEREMONY_LABELS[data.ceremonyType] || CEREMONY_LABELS[1];
-  const dressInfo = DRESS_LABELS[data.dressCode] || DRESS_LABELS[1];
+
+  // Resolve ceremony label from dynamic card settings
+  const ceremonyEntry = (cardSettings.ceremonyTypes || []).find(c => Number(c.value) === Number(data.ceremonyType));
+  const ceremonyLabel = ceremonyEntry ? ceremonyEntry.label : CEREMONY_FALLBACK;
+
+  // Resolve dress code from dynamic card settings
+  const dressEntry = (cardSettings.dressCodes || []).find(d => Number(d.value) === Number(data.dressCode));
+  const dressInfo = dressEntry
+    ? { title: dressEntry.label, desc: dressEntry.description || "" }
+    : DRESS_FALLBACK;
+
+  // Resolve reception type from dynamic card settings
+  const receptionEntry = (cardSettings.receptionTypes || []).find(r => Number(r.value) === Number(data.receptionType));
+  const receptionInfo = receptionEntry
+    ? { title: receptionEntry.label, desc: receptionEntry.description || "" }
+    : RECEPTION_FALLBACK;
+
   const eventTime = data.event?.time || "";
 
   // Format time for display (convert 24h "14:30" to "02:30 PM")
@@ -592,8 +598,8 @@ const RoyalGoldTemplate = ({ data, guestName, guestCount }) => {
               {/* Reception */}
               <div className="space-y-6 text-center">
                 <h3 className="text-2xl pb-4" style={{ borderBottom: "1px solid rgba(138,101,32,0.2)" }}>Reception</h3>
-                <p className="text-sm uppercase font-bold" style={{ letterSpacing: "0.2em", color: "#8a6520" }}>Evening Banquet</p>
-                <p className="text-lg">Dinner & Celebration</p>
+                <p className="text-sm uppercase font-bold" style={{ letterSpacing: "0.2em", color: "#8a6520" }}>{receptionInfo.title}</p>
+                <p className="text-lg">{receptionInfo.desc}</p>
                 <p className="font-light leading-relaxed" style={{ color: "#8a8a8a" }}>{data.event.location}</p>
               </div>
             </div>
@@ -652,16 +658,16 @@ const RoyalGoldTemplate = ({ data, guestName, guestCount }) => {
                 <iframe title="Venue Map" src={data.event.mapEmbedUrl} width="100%" height="100%" style={{ border: 0 }} allowFullScreen="" loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
               </div>
               <div className="py-16 text-center">
-                <a 
+                  <a 
                   href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(data.event.location)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                    target="_blank"
+                    rel="noopener noreferrer"
                   className="inline-flex items-center gap-3 px-10 py-4 border border-[#8a6520]/60 text-[#8a6520] text-[10px] font-bold uppercase tracking-[0.4em] hover:bg-[#8a6520] hover:text-[#fdf8f0] transition-all duration-500 shadow-sm"
-                >
-                  <HiOutlineMap className="text-base" />
+                  >
+                    <HiOutlineMap className="text-base" />
                   Get Directions
-                </a>
-              </div>
+                  </a>
+                </div>
             </section>
           )}
 
