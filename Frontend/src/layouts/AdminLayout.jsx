@@ -8,6 +8,7 @@ const pageTitles = {
   "/admin": "Dashboard",
   "/admin/create": "Create Invitation",
   "/admin/invitations": "Manage Invitations",
+  "/admin/card-settings": "Card Settings",
   "/admin/settings": "Settings",
 };
 

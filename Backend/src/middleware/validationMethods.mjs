@@ -91,11 +91,15 @@ export const createInvitationValidator = () => [
    body("ceremonyType")
       .if(body("invitationType").equals("wedding"))
       .optional()
-      .isInt({ min: 1, max: 5 }).withMessage("Ceremony type must be between 1 and 5"),
+      .isInt().withMessage("Ceremony type must be a valid number"),
    body("dressCode")
       .if(body("invitationType").equals("wedding"))
       .optional()
-      .isInt({ min: 1, max: 3 }).withMessage("Dress code must be between 1 and 3"),
+      .isInt().withMessage("Dress code must be a valid number"),
+   body("receptionType")
+      .if(body("invitationType").equals("wedding"))
+      .optional()
+      .isInt().withMessage("Reception type must be a valid number"),
    body("backgroundMusic")
       .if(body("invitationType").equals("wedding"))
       .optional().trim(),

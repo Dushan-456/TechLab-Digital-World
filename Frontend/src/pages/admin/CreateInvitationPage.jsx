@@ -20,25 +20,7 @@ const templates = {
   ]
 };
 
-const CEREMONY_TYPES = [
-  { value: 1, label: "Poruwa Ceremony (Traditional Sri Lankan)" },
-  { value: 2, label: "Church Wedding (Christian)" },
-  { value: 3, label: "Registry Wedding (Civil)" },
-  { value: 4, label: "Hindu Wedding Ceremony" },
-  { value: 5, label: "Muslim Nikah Ceremony" },
-];
 
-const DRESS_CODES = [
-  { value: 1, label: "Formal — Black Tie / Evening Wear" },
-  { value: 2, label: "Semi-Formal — Cocktail Attire" },
-  { value: 3, label: "Casual — Relaxed & Comfortable" },
-];
-
-const AUDIO_OPTIONS = [
-  { value: "", label: "No Background Music" },
-  { value: "/audio/music1.mp3", label: "Romantic Piano (Music 1)" },
-  { value: "/audio/music2.mp3", label: "Wedding March (Music 2)" },
-];
 
 const CreateInvitationPage = () => {
   const { type, cardId: editCardId } = useParams();
@@ -61,6 +43,7 @@ const CreateInvitationPage = () => {
     groomParents: "",
     ceremonyType: "1",
     dressCode: "1",
+    receptionType: "1",
     backgroundMusic: "",
     celebrantName: "",
     age: "",
@@ -83,6 +66,32 @@ const CreateInvitationPage = () => {
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
 
+  const [ceremonyTypes, setCeremonyTypes] = useState([]);
+  const [dressCodes, setDressCodes] = useState([]);
+  const [backgroundMusicOptions, setBackgroundMusicOptions] = useState([]);
+  const [receptionTypes, setReceptionTypes] = useState([]);
+
+  // Fetch all card settings from API
+  useEffect(() => {
+    const fetchCardSettings = async () => {
+      try {
+        const [ceremonyRes, dressRes, musicRes, receptionRes] = await Promise.all([
+          API.get("card-settings?category=ceremonyType"),
+          API.get("card-settings?category=dressCode"),
+          API.get("card-settings?category=backgroundMusic"),
+          API.get("card-settings?category=receptionType"),
+        ]);
+        setCeremonyTypes(ceremonyRes.data.data);
+        setDressCodes(dressRes.data.data);
+        setBackgroundMusicOptions(musicRes.data.data);
+        setReceptionTypes(receptionRes.data.data);
+      } catch (err) {
+        console.error("Failed to load card settings:", err);
+      }
+    };
+    fetchCardSettings();
+  }, []);
+
   useEffect(() => {
     if (isEditMode) {
       const fetchInvitation = async () => {
@@ -104,6 +113,7 @@ const CreateInvitationPage = () => {
             groomParents: inv.parents?.groomParents || "",
             ceremonyType: String(inv.ceremonyType || 1),
             dressCode: String(inv.dressCode || 1),
+            receptionType: String(inv.receptionType || 1),
             backgroundMusic: inv.backgroundMusic || "",
             celebrantName: inv.celebrantName || "",
             age: inv.age || "",
@@ -309,23 +319,31 @@ const CreateInvitationPage = () => {
               </div>
             </div>
 
-            {/* Ceremony Type & Dress Code Dropdowns */}
+            {/* Ceremony Type, Dress Code & Reception Dropdowns */}
             <div>
-              <p className={sectionTitle}>⛪ Ceremony & Dress Code</p>
-              <div className="grid grid-cols-2 gap-4">
+              <p className={sectionTitle}>⛪ Ceremony, Dress Code & Reception</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className={labelCls}>Ceremony Type</label>
                   <select name="ceremonyType" value={form.ceremonyType} onChange={handleChange} className={`${inputCls} outline-none`}>
-                    {CEREMONY_TYPES.map((c) => (
-                      <option key={c.value} value={c.value}>{c.label}</option>
+                    {ceremonyTypes.map((c) => (
+                      <option key={c.value} value={c.value}>{c.label}{c.description ? ` (${c.description})` : ""}</option>
                     ))}
                   </select>
                 </div>
                 <div>
                   <label className={labelCls}>Dress Code</label>
                   <select name="dressCode" value={form.dressCode} onChange={handleChange} className={`${inputCls} outline-none`}>
-                    {DRESS_CODES.map((d) => (
-                      <option key={d.value} value={d.value}>{d.label}</option>
+                    {dressCodes.map((d) => (
+                      <option key={d.value} value={d.value}>{d.label}{d.description ? ` — ${d.description}` : ""}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelCls}>Reception</label>
+                  <select name="receptionType" value={form.receptionType} onChange={handleChange} className={`${inputCls} outline-none`}>
+                    {receptionTypes.map((r) => (
+                      <option key={r.value} value={r.value}>{r.label}{r.description ? ` (${r.description})` : ""}</option>
                     ))}
                   </select>
                 </div>
@@ -339,8 +357,9 @@ const CreateInvitationPage = () => {
                 <div>
                   <label className={labelCls}>Select Music</label>
                   <select name="backgroundMusic" value={form.backgroundMusic} onChange={handleChange} className={`${inputCls} outline-none`}>
-                    {AUDIO_OPTIONS.map((audio) => (
-                      <option key={audio.value} value={audio.value}>{audio.label}</option>
+                    <option value="">No Background Music</option>
+                    {backgroundMusicOptions.map((audio) => (
+                      <option key={audio.value} value={audio.url}>{audio.label}</option>
                     ))}
                   </select>
                 </div>

@@ -14,6 +14,18 @@ const fileFilter = (req, file, cb) => {
    }
 };
 
+// --- Shared file filter (audio only) ---
+const audioFilter = (req, file, cb) => {
+   console.log("🎵 Incoming audio to Multer:", file.originalname, file.mimetype, file.fieldname);
+   const allowedTypes = ["audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg", "audio/aac", "video/mp4"]; // Allowing some common ones
+   if (allowedTypes.includes(file.mimetype) || file.mimetype.startsWith("audio/")) {
+      cb(null, true);
+   } else {
+      console.error("❌ Audio rejected by filter:", file.mimetype);
+      cb(new Error("Only audio files (MP3, WAV, OGG) are allowed"), false);
+   }
+};
+
 // ── Profile Picture Upload ──────────────────────────────────────────────────────
 const profileUploadDir = "uploads/profile_pics";
 if (!fs.existsSync(profileUploadDir)) {
@@ -56,4 +68,26 @@ export const invitationUpload = multer({
    storage: invitationStorage,
    fileFilter,
    limits: { fileSize: 10 * 1024 * 1024 }, // 5MB per file for high-res invitation images
+});
+
+// ── Audio Upload ────────────────────────────────────────────────────────────────
+const audioUploadDir = "uploads/audio";
+if (!fs.existsSync(audioUploadDir)) {
+   fs.mkdirSync(audioUploadDir, { recursive: true });
+}
+
+const audioStorage = multer.diskStorage({
+   destination: (req, file, cb) => {
+      cb(null, audioUploadDir);
+   },
+   filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+      cb(null, "audio-" + uniqueSuffix + path.extname(file.originalname));
+   },
+});
+
+export const audioUpload = multer({
+   storage: audioStorage,
+   fileFilter: audioFilter,
+   limits: { fileSize: 15 * 1024 * 1024 }, // 15MB limit for audio files
 });
