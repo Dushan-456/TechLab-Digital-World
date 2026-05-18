@@ -86,12 +86,14 @@ const weddingSchema = new mongoose.Schema({
    galleryImages: [{ type: String }],
    ceremonyType: {
       type: Number,
-      enum: [1, 2, 3, 4, 5],
       default: 1,
    },
    dressCode: {
       type: Number,
-      enum: [1, 2, 3],
+      default: 1,
+   },
+   receptionType: {
+      type: Number,
       default: 1,
    },
    backgroundMusic: { type: String, trim: true },
