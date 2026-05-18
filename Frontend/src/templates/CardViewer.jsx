@@ -25,14 +25,27 @@ const CardViewer = () => {
   const guestName = searchParams.get("name") || "";
   const guestCount = searchParams.get("guests") || "";
   const [data, setData] = useState(null);
+  const [cardSettings, setCardSettings] = useState({ ceremonyTypes: [], dressCodes: [], backgroundMusic: [], receptionTypes: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchCard = async () => {
       try {
-        const res = await API.get(`invitations/${cardId}`);
-        setData(res.data.data);
+        const [invRes, ceremonyRes, dressRes, musicRes, receptionRes] = await Promise.all([
+          API.get(`invitations/${cardId}`),
+          API.get("card-settings?category=ceremonyType"),
+          API.get("card-settings?category=dressCode"),
+          API.get("card-settings?category=backgroundMusic"),
+          API.get("card-settings?category=receptionType"),
+        ]);
+        setData(invRes.data.data);
+        setCardSettings({
+          ceremonyTypes: ceremonyRes.data.data,
+          dressCodes: dressRes.data.data,
+          backgroundMusic: musicRes.data.data,
+          receptionTypes: receptionRes.data.data,
+        });
       } catch (err) {
         setError(err.response?.status === 404 ? "Invitation not found." : "Something went wrong.");
       } finally {
@@ -76,7 +89,8 @@ const CardViewer = () => {
     );
   }
 
-  return <TemplateComponent data={data} guestName={guestName} guestCount={guestCount} />;
+  return <TemplateComponent data={data} guestName={guestName} guestCount={guestCount} cardSettings={cardSettings} />;
 };
 
 export default CardViewer;
+
