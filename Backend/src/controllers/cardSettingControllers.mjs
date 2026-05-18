@@ -170,7 +170,7 @@ class CardSettingControllers {
             { category: "ceremonyType", value: 5, label: "Muslim Nikah Ceremony", description: "Muslim", sortOrder: 5 },
             
             // Dress Codes
-            { category: "dressCode", value: 1, label: "Formal", description: "Black Tie / Evening Wear", sortOrder: 1 },
+            { category: "dressCode", value: 1, label: "Formal", description: "Sarees & formal suits preferred", sortOrder: 1 },
             { category: "dressCode", value: 2, label: "Semi-Formal", description: "Cocktail Attire", sortOrder: 2 },
             { category: "dressCode", value: 3, label: "Casual", description: "Relaxed & Comfortable", sortOrder: 3 },
             { category: "dressCode", value: 4, label: "Black Tie", description: "Tuxedos & Formal Gowns", sortOrder: 4 },
