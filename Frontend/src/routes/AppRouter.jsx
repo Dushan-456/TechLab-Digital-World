@@ -10,6 +10,7 @@ import DashboardPage from "../pages/admin/DashboardPage";
 import CreateInvitationPage from "../pages/admin/CreateInvitationPage";
 import ManageInvitationsPage from "../pages/admin/ManageInvitationsPage";
 import SettingsPage from "../pages/admin/SettingsPage";
+import CardSettingsPage from "../pages/admin/CardSettingsPage";
 import CreateUserPage from "../pages/admin/CreateUserPage";
 import ManageUsersPage from "../pages/admin/ManageUsersPage";
 import CreateBusinessCardPage from "../pages/admin/CreateBusinessCardPage";
@@ -90,6 +91,10 @@ const router = createBrowserRouter([
           {
             path: "users/create",
             element: <CreateUserPage />,
+          },
+          {
+            path: "card-settings",
+            element: <CardSettingsPage />,
           },
           {
             path: "settings",
