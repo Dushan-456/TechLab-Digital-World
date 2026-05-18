@@ -13,6 +13,7 @@ import {
   HiOutlineIdentification,
   HiOutlineUserAdd,
   HiOutlineUsers,
+  HiOutlineAdjustments,
 } from "react-icons/hi";
 
 const navItems = [
@@ -64,6 +65,11 @@ const navItems = [
     path: "/admin/users",
     icon: HiOutlineUsers,
     end: true,
+  },
+  {
+    label: "Card Settings",
+    path: "/admin/card-settings",
+    icon: HiOutlineAdjustments,
   },
   {
     label: "Settings",
