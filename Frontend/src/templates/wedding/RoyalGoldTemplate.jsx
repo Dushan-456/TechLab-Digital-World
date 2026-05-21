@@ -293,15 +293,23 @@ const RoyalGoldTemplate = ({ data, guestName, guestCount, cardSettings = {} }) =
 
               {/* Internal Card */}
               <div className="absolute flex flex-col items-center justify-center text-center"
-                style={{ top: "8px", left: "8px", right: "8px", bottom: "8px", paddingTop: "17%", background: "#fdf8f0", border: "1px solid rgba(138, 101, 32, 0.15)", zIndex: 3,
+                style={{ top: "8px", left: "8px", right: "8px", bottom: "8px", paddingTop: "16%", background: "#fdf8f0", border: "1px solid rgba(138, 101, 32, 0.15)", zIndex: 3,
                   transition: cardSlide ? "transform 2.8s cubic-bezier(0.4, 0, 0.2, 1)" : "none",
                   transform: cardSlide ? "translateY(-120%)" : "translateY(0)" }}>
-                <div className="px-15 pt-15 pb-13" style={{ background: "#fdf8f0", boxShadow: "0 4px 20px rgba(138, 101, 32, 0.1), 0 1px 4px rgba(0, 0, 0, 0.05)", borderRadius: "4px", border: "1px solid rgba(138, 101, 32, 0.08)" }}>
-                  <h2 className="text-bold italic" style={{ fontSize: "min(2.2rem, 7vw)", color: "#8a6520", letterSpacing: "-0.02em", lineHeight: 1.3 }}>
+                <div className="px-2 py-5 mx-auto w-[90%] max-w-[340px] flex flex-col items-center justify-center overflow-hidden" style={{ background: "#fdf8f0", boxShadow: "0 4px 20px rgba(138, 101, 32, 0.05), 0 1px 4px rgba(0, 0, 0, 0.05)", borderRadius: "4px", border: "1px solid rgba(138, 101, 32, 0.08)" }}>
+                  <h2 className="font-bold italic whitespace-nowrap w-full text-center tracking-tight" 
+                    style={{ 
+                      fontSize: `${data?.couple?.bride || ""} & ${data?.couple?.groom || ""}`.length <= 13 ? "clamp(1.8rem, 7.5vw, 2.6rem)" :
+                                `${data?.couple?.bride || ""} & ${data?.couple?.groom || ""}`.length <= 17 ? "clamp(1.5rem, 6.5vw, 2.1rem)" :
+                                `${data?.couple?.bride || ""} & ${data?.couple?.groom || ""}`.length <= 22 ? "clamp(1.3rem, 5.5vw, 1.7rem)" :
+                                "clamp(1.1rem, 4.8vw, 1.45rem)",
+                      color: "#8a6520", 
+                      letterSpacing: "-0.02em" 
+                    }}>
                     {data.couple.bride} & {data.couple.groom}
                   </h2>
-                  <div style={{ width: "40px", height: "1px", background: "rgba(138, 101, 32, 0.15)", margin: "1px auto" }} />
-                  <p style={{ fontSize: "12px", letterSpacing: "0.45em", color: "rgba(138, 101, 32, 0.5)" }}>{formattedDate}</p>
+                  <div style={{ width: "40px", height: "1px", background: "rgba(138, 101, 32, 0.15)", margin: "10px auto 8px auto" }} />
+                  <p style={{ fontSize: "15px", letterSpacing: "0.35em", color: "rgba(138, 101, 32, 0.6)", textTransform: "uppercase" }}>{formattedDate}</p>
                 </div>
               </div>
 
@@ -398,9 +406,9 @@ const RoyalGoldTemplate = ({ data, guestName, guestCount, cardSettings = {} }) =
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.5, duration: 1 }}
-                className="text-[13px] md:text-sm uppercase font-bold tracking-[0.6em] text-[#8a6520] mb-8"
+                className="text-[13px] md:text-sm uppercase font-bold tracking-[0.6em] text-[#8a6520] mb-8 px-4 text-center"
               >
-                The Wedding Celebration of
+                {data.content?.welcomeText || "The Wedding Celebration of"}
               </motion.p>
               
               {/* Flipping Ring (Continuous Mirror) */}
@@ -421,13 +429,21 @@ const RoyalGoldTemplate = ({ data, guestName, guestCount, cardSettings = {} }) =
                 </motion.div>
               </motion.div>
               
-              <div className="space-y-4">
+              <div className="space-y-4 w-full px-4 overflow-hidden">
                 <motion.h1 
                   initial={{ y: 40, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 1.2, duration: 1.2, ease: "easeOut" }}
-                  className="text-7xl md:text-[140px] uppercase tracking-tighter text-[#8a6520] leading-none" 
-                  style={{ fontFamily: "'Cormorant Garamond', serif", textShadow: "0 20px 40px rgba(138,101,32,0.25)" }}
+                  className="uppercase tracking-tighter text-[#8a6520] leading-none whitespace-nowrap overflow-hidden text-ellipsis" 
+                  style={{ 
+                    fontFamily: "'Cormorant Garamond', serif", 
+                    textShadow: "0 20px 40px rgba(138,101,32,0.25)",
+                    fontSize: (data?.couple?.bride || "").length <= 6 ? "clamp(4.5rem, 15vw, 140px)" :
+                              (data?.couple?.bride || "").length <= 10 ? "clamp(3.5rem, 11vw, 110px)" :
+                              (data?.couple?.bride || "").length <= 14 ? "clamp(2.8rem, 8.5vw, 85px)" :
+                              (data?.couple?.bride || "").length <= 18 ? "clamp(2.2rem, 6.5vw, 68px)" :
+                              "clamp(1.8rem, 5vw, 55px)"
+                  }}
                 >
                   {data.couple.bride}
                 </motion.h1>
@@ -442,8 +458,16 @@ const RoyalGoldTemplate = ({ data, guestName, guestCount, cardSettings = {} }) =
                   initial={{ y: 40, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 1.8, duration: 1.2, ease: "easeOut" }}
-                  className="text-7xl md:text-[140px] uppercase tracking-tighter text-[#8a6520] leading-none" 
-                  style={{ fontFamily: "'Cormorant Garamond', serif", textShadow: "0 20px 40px rgba(138,101,32,0.25)" }}
+                  className="uppercase tracking-tighter text-[#8a6520] leading-none whitespace-nowrap overflow-hidden text-ellipsis" 
+                  style={{ 
+                    fontFamily: "'Cormorant Garamond', serif", 
+                    textShadow: "0 20px 40px rgba(138,101,32,0.25)",
+                    fontSize: (data?.couple?.groom || "").length <= 6 ? "clamp(4.5rem, 15vw, 140px)" :
+                              (data?.couple?.groom || "").length <= 10 ? "clamp(3.5rem, 11vw, 110px)" :
+                              (data?.couple?.groom || "").length <= 14 ? "clamp(2.8rem, 8.5vw, 85px)" :
+                              (data?.couple?.groom || "").length <= 18 ? "clamp(2.2rem, 6.5vw, 68px)" :
+                              "clamp(1.8rem, 5vw, 55px)"
+                  }}
                 >
                   {data.couple.groom}
                 </motion.h1>
@@ -653,8 +677,8 @@ const RoyalGoldTemplate = ({ data, guestName, guestCount, cardSettings = {} }) =
 
           {/* ── MAP EMBED ────────────────────────────────────── */}
           {hasMap && (
-            <section className="bg-[#fdf8f0]">
-              <div className="h-96 w-full grayscale contrast-125 opacity-70 border-y border-[#8a6520]/10">
+            <section className="bg-[#fdf8f0] py-6 md:py-12">
+              <div className="h-96 w-full max-w-5xl mx-auto  grayscale contrast-125 opacity-70 md:rounded-lg md:shadow-xl md:border md:border-[#8a6520]/20 border-y border-[#8a6520]/10 overflow-hidden">
                 <iframe title="Venue Map" src={data.event.mapEmbedUrl} width="100%" height="100%" style={{ border: 0 }} allowFullScreen="" loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
               </div>
               <div className="py-16 text-center">

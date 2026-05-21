@@ -230,7 +230,19 @@ class InvitationControllers {
             const coverFile = req.files?.coverImage?.[0];
             if (coverFile) {
                invitation.coverImage = `/uploads/invitations/${coverFile.filename}`;
+            } else if (req.body.removeCoverImage === "true") {
+               invitation.coverImage = "";
             }
+
+            if (req.body.existingGallery !== undefined) {
+               try {
+                  const keptGallery = JSON.parse(req.body.existingGallery);
+                  invitation.galleryImages = keptGallery;
+               } catch (err) {
+                  console.error("Error parsing existingGallery:", err);
+               }
+            }
+
             const galleryFiles = req.files?.galleryImages;
             if (galleryFiles && galleryFiles.length > 0) {
                const newPaths = galleryFiles.map((f) => `/uploads/invitations/${f.filename}`);

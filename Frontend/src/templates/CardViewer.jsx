@@ -1,22 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import API from "../services/api";
-import EtherealTemplate from "./wedding/EtherealTemplate";
-import LuminaTemplate from "./wedding/LuminaTemplate";
-import KineticTemplate from "./wedding/KineticTemplate";
-import RoyalGoldTemplate from "./wedding/RoyalGoldTemplate";
-import JoyfulTemplate from "./birthday/JoyfulTemplate";
-import CorporateTemplate from "./event/CorporateTemplate";
-
-
-const templateMap = {
-  ethereal: EtherealTemplate,
-  lumina: LuminaTemplate,
-  kinetic: KineticTemplate,
-  royalgold: RoyalGoldTemplate,
-  joyful: JoyfulTemplate,
-  corporate: CorporateTemplate,
-};
+import { getTemplateComponent } from "./templateRegistry";
 
 const CardViewer = () => {
   const { cardId } = useParams();
@@ -79,7 +64,7 @@ const CardViewer = () => {
     );
   }
 
-  const TemplateComponent = templateMap[data?.templateId];
+  const TemplateComponent = getTemplateComponent(data?.templateId);
 
   if (!TemplateComponent) {
     return (

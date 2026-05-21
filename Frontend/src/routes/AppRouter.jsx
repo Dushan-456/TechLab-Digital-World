@@ -7,7 +7,10 @@ import Error404Page from "../pages/Error404Page";
 import Error403Page from "../pages/Error403Page";
 import ProtectedRouter from "./ProtectedRouter";
 import DashboardPage from "../pages/admin/DashboardPage";
-import CreateInvitationPage from "../pages/admin/CreateInvitationPage";
+import EditInvitationPage from "../pages/admin/EditInvitationPage";
+import CreateWeddingPage from "../pages/admin/CreateWeddingPage";
+import CreateBirthdayPage from "../pages/admin/CreateBirthdayPage";
+import CreateEventPage from "../pages/admin/CreateEventPage";
 import ManageInvitationsPage from "../pages/admin/ManageInvitationsPage";
 import SettingsPage from "../pages/admin/SettingsPage";
 import CardSettingsPage from "../pages/admin/CardSettingsPage";
@@ -60,13 +63,23 @@ const router = createBrowserRouter([
             index: true,
             element: <DashboardPage />,
           },
+          // --- Type-Specific Create Pages ---
           {
-            path: "create/:type",
-            element: <CreateInvitationPage />,
+            path: "create/wedding",
+            element: <CreateWeddingPage />,
           },
           {
+            path: "create/birthday",
+            element: <CreateBirthdayPage />,
+          },
+          {
+            path: "create/event",
+            element: <CreateEventPage />,
+          },
+          // --- Edit (uses combined page, auto-detects type) ---
+          {
             path: "edit/:cardId",
-            element: <CreateInvitationPage />,
+            element: <EditInvitationPage />,
           },
           {
             path: "invitations",

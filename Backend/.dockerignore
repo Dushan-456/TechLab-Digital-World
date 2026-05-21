@@ -1,0 +1,10 @@
+node_modules
+npm-debug.log*
+.env
+.env.*
+uploads/audio/*
+uploads/invitations/*
+uploads/profile_pics/*
+.git
+.gitignore
+README.md
