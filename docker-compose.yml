@@ -34,7 +34,7 @@ services:
       # Override MongoDB URI to use Docker service name
       MONGODB_URI: mongodb://mongodb:27017/digital-wedding
       # Override frontend URL for CORS (Docker frontend is on port 3000)
-      FRONTEND_URL: http://192.168.112.199:3004
+      FRONTEND_URL: http://localhost:3004,http://192.168.112.199:3004
     volumes:
       # Persist uploaded files on the host
       - backend-uploads:/app/uploads
