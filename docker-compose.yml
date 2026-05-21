@@ -1,6 +1,4 @@
-# =====================================================
-#  TechLab Digital Wedding — Docker Compose (Production)
-# =====================================================
+
 
 services:
   # ── MongoDB ──
@@ -9,7 +7,7 @@ services:
     container_name: digital-wedding-mongo
     restart: unless-stopped
     ports:
-      - "27017:27017"
+      - "27020:27017"
     volumes:
       - mongo-data:/data/db
     healthcheck:
@@ -21,7 +19,7 @@ services:
     networks:
       - app-network
 
-  # ── Backend (Express API) ──
+  # ── Backend (Express API) ─
   backend:
     build:
       context: ./Backend
@@ -29,14 +27,14 @@ services:
     container_name: digital-wedding-backend
     restart: unless-stopped
     ports:
-      - "5000:5000"
+      - "5004:5000"
     env_file:
       - ./Backend/.env
     environment:
       # Override MongoDB URI to use Docker service name
-      MONGODB_URI: mongodb://mongodb:27017/digital-wedding
+      MONGODB_URI: mongodb://mongodb:27020/digital-wedding
       # Override frontend URL for CORS (Docker frontend is on port 3000)
-      FRONTEND_URL: http://localhost:3000
+      FRONTEND_URL: http://localhost:3004
     volumes:
       # Persist uploaded files on the host
       - backend-uploads:/app/uploads
@@ -44,7 +42,7 @@ services:
       mongodb:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:5000/healthz"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:5004/healthz"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -59,11 +57,11 @@ services:
       dockerfile: Dockerfile
       args:
         # This is baked into the JS bundle at build time
-        VITE_API_BASE_URL: http://localhost:5000/api/v1/
+        VITE_API_BASE_URL: http://localhost:5004/api/v1/
     container_name: digital-wedding-frontend
     restart: unless-stopped
     ports:
-      - "3000:80"
+      - "3004:80"
     depends_on:
       backend:
         condition: service_healthy
