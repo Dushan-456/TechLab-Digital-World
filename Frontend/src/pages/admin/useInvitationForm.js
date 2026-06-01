@@ -130,7 +130,19 @@ export const useInvitationForm = (invitationType) => {
   };
 
   const copyUrl = () => {
-    navigator.clipboard.writeText(`${window.location.origin}/v/${success?.data?.cardId}`);
+    const text = `${window.location.origin}/v/${success?.data?.cardId}`;
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text);
+    } else {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
     setCopied(true); setTimeout(() => setCopied(false), 2000);
   };
 
