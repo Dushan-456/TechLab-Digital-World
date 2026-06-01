@@ -125,7 +125,18 @@ const CreateBusinessCardPage = () => {
 
   const copyUrl = () => {
     const url = `${window.location.origin}/b/${success?.data?.cardId}`;
-    navigator.clipboard.writeText(url);
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(url);
+    } else {
+      const ta = document.createElement("textarea");
+      ta.value = url;
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
