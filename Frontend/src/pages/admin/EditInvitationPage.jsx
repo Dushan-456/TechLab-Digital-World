@@ -110,7 +110,22 @@ const EditInvitationPage = () => {
       setError(err.response?.data?.message || err.response?.data?.error?.[0]?.message || "Failed to save.");
     } finally { setSaving(false); }
   };
-  const copyUrl = () => { navigator.clipboard.writeText(`${window.location.origin}/v/${success?.data?.cardId}`); setCopied(true); setTimeout(() => setCopied(false), 2000); };
+  const copyUrl = () => {
+    const text = `${window.location.origin}/v/${success?.data?.cardId}`;
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text);
+    } else {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+    setCopied(true); setTimeout(() => setCopied(false), 2000);
+  };
 
   if (loading) return <div className="p-8 text-[var(--color-text-muted)]">Loading invitation details...</div>;
 
