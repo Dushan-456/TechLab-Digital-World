@@ -41,6 +41,25 @@ const businessCardSchema = new mongoose.Schema(
          type: Boolean,
          default: true,
       },
+      status: {
+         type: String,
+         enum: ["PENDING_PAYMENT", "PAYMENT_UNDER_REVIEW", "ACTIVE", "REJECTED"],
+         default: "PENDING_PAYMENT",
+      },
+      payment: {
+         slipUrl: { type: String, default: null },
+         uploadedAt: { type: Date, default: null },
+         bankName: { type: String, trim: true },
+         referenceNumber: { type: String, trim: true },
+         amount: { type: Number, default: 0 },
+         verifiedAt: { type: Date, default: null },
+         verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+         rejectionReason: { type: String, default: null },
+      },
+      price: {
+         type: Number,
+         default: 0,
+      },
       views: {
          type: Number,
          default: 0,
@@ -50,3 +69,4 @@ const businessCardSchema = new mongoose.Schema(
 );
 
 export const BusinessCard = mongoose.model("BusinessCard", businessCardSchema);
+export default BusinessCard;
