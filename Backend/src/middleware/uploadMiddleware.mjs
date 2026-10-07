@@ -91,3 +91,35 @@ export const audioUpload = multer({
    fileFilter: audioFilter,
    limits: { fileSize: 15 * 1024 * 1024 }, // 15MB limit for audio files
 });
+
+// ── Payment Slip Upload ─────────────────────────────────────────────────────────
+const slipUploadDir = "uploads/payment_slips";
+if (!fs.existsSync(slipUploadDir)) {
+   fs.mkdirSync(slipUploadDir, { recursive: true });
+}
+
+const slipFilter = (req, file, cb) => {
+   const allowedTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+   if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+   } else {
+      cb(new Error("Only images (JPG, PNG, WEBP) or PDF are allowed for payment proof"), false);
+   }
+};
+
+const slipStorage = multer.diskStorage({
+   destination: (req, file, cb) => {
+      cb(null, slipUploadDir);
+   },
+   filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+      cb(null, "slip-" + uniqueSuffix + path.extname(file.originalname));
+   },
+});
+
+export const paymentSlipUpload = multer({
+   storage: slipStorage,
+   fileFilter: slipFilter,
+   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit for slips
+});
+
