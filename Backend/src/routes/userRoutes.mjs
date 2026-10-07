@@ -7,6 +7,7 @@ const userRoutes = Router();
 
 // --- PUBLIC ROUTES -------------------------------------------------------------------------------------------------------
 
+userRoutes.post("/customer-register", RegisterValidator(), userControllers.customerRegister);
 userRoutes.post("/login", loginValidator(), userControllers.loginUser);
 userRoutes.post("/logout", userControllers.logoutUser);
 userRoutes.post("/forgot-password", forgotEmailValidator(), userControllers.forgotPassword);
