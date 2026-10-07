@@ -5,6 +5,7 @@ import invitationControllers from "../controllers/invitationControllers.mjs";
 import { authenticateToken } from "../middleware/authMiddleware.mjs";
 import businessCardRoutes from "./businessCardRoutes.mjs";
 import cardSettingRoutes from "./cardSettingRoutes.mjs";
+import orderRoutes from "./orderRoutes.mjs";
 import { upload, audioUpload } from "../middleware/uploadMiddleware.mjs";
 
 // Create the main root router
@@ -35,6 +36,7 @@ rootRouter.use("/users", userRoutes);
 rootRouter.use("/invitations", invitationRoutes);
 rootRouter.use("/business-cards", businessCardRoutes);
 rootRouter.use("/card-settings", cardSettingRoutes);
+rootRouter.use("/orders", orderRoutes);
 
 // Handle undefined routes (404 Not Found)
 rootRouter.use((req, res, next) => {
