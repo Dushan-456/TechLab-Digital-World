@@ -53,10 +53,39 @@ const baseInvitationSchema = new mongoose.Schema(
          deadline: {
             type: Date,
          },
+         responses: [
+            {
+               name: { type: String, required: true, trim: true },
+               email: { type: String, trim: true },
+               attending: { type: String, enum: ["yes", "no"], default: "yes" },
+               guestCount: { type: Number, default: 1 },
+               message: { type: String, trim: true },
+               submittedAt: { type: Date, default: Date.now },
+            },
+         ],
       },
       isPublished: {
          type: Boolean,
          default: true,
+      },
+      status: {
+         type: String,
+         enum: ["PENDING_PAYMENT", "PAYMENT_UNDER_REVIEW", "ACTIVE", "REJECTED"],
+         default: "PENDING_PAYMENT",
+      },
+      payment: {
+         slipUrl: { type: String, default: null },
+         uploadedAt: { type: Date, default: null },
+         bankName: { type: String, trim: true },
+         referenceNumber: { type: String, trim: true },
+         amount: { type: Number, default: 0 },
+         verifiedAt: { type: Date, default: null },
+         verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+         rejectionReason: { type: String, default: null },
+      },
+      price: {
+         type: Number,
+         default: 0,
       },
       views: {
          type: Number,
@@ -122,4 +151,39 @@ const eventSchema = new mongoose.Schema({
 
 const EventInvitation = Invitation.discriminator("event", eventSchema);
 
-export { Invitation, WeddingInvitation, BirthdayInvitation, EventInvitation };
+// ----------------------------------------
+// Discriminator: Business Event
+// ----------------------------------------
+const businessEventSchema = new mongoose.Schema({
+   eventTitle: { type: String, required: [true, "Event title is required"], trim: true },
+   tagline: { type: String, trim: true },
+   organizer: { type: String, trim: true },
+   agenda: [
+      {
+         time: { type: String, trim: true },
+         session: { type: String, trim: true },
+         speaker: { type: String, trim: true },
+      },
+   ],
+   speakers: [
+      {
+         name: { type: String, trim: true },
+         role: { type: String, trim: true },
+         company: { type: String, trim: true },
+         photo: { type: String },
+         linkedin: { type: String },
+      },
+   ],
+   registrationLink: { type: String, trim: true },
+   ticketPrice: { type: String, trim: true },
+   sponsors: [
+      {
+         name: { type: String, trim: true },
+         logoUrl: { type: String },
+      },
+   ],
+});
+
+const BusinessEventInvitation = Invitation.discriminator("business-event", businessEventSchema);
+
+export { Invitation, WeddingInvitation, BirthdayInvitation, EventInvitation, BusinessEventInvitation };
