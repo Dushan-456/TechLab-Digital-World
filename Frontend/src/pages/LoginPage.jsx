@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import API from "../services/api";
 import { HiOutlineHeart, HiOutlineMail, HiOutlineLockClosed, HiOutlineEye, HiOutlineEyeOff } from "react-icons/hi";
@@ -144,6 +144,13 @@ const LoginPage = () => {
               )}
             </button>
           </form>
+
+          <div className="mt-6 text-center text-xs text-[var(--color-text-muted)] pt-4 border-t border-[var(--color-border)]">
+            Don't have an account?{" "}
+            <Link to="/register" className="font-semibold text-[var(--color-primary)] hover:underline">
+              Create Account
+            </Link>
+          </div>
         </div>
 
         <p className="text-center text-xs text-[var(--color-text-light)] mt-6">

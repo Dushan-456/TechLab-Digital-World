@@ -57,7 +57,7 @@ const DashboardPage = () => {
           <h2 className="text-2xl font-bold text-[var(--color-text)] font-[var(--font-display)]">Overview</h2>
           <p className="text-sm text-[var(--color-text-muted)] mt-1">Your wedding invitation platform at a glance</p>
         </div>
-        <Link to="/admin/create" className="flex items-center gap-2 h-10 px-5 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-dark)] text-white text-sm font-semibold rounded-[var(--radius-md)] hover:shadow-lg transition-all">
+        <Link to="/admin/create/wedding" className="flex items-center gap-2 h-10 px-5 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-dark)] text-white text-sm font-semibold rounded-[var(--radius-md)] hover:shadow-lg transition-all">
           <HiOutlinePlusCircle className="text-lg" />
           New Invitation
         </Link>

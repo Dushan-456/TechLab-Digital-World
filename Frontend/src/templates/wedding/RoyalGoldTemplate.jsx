@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { HiOutlineVolumeUp, HiOutlineVolumeOff, HiOutlineChevronDoubleDown, HiOutlineArrowNarrowDown, HiOutlineMap, HiOutlineCalendar, HiOutlineX, HiOutlineHeart } from "react-icons/hi";
 import confetti from "canvas-confetti";
+import API from "../../services/api";
 import ringImg from "../../assets/images/ring.png";
 import coverImg from "../../assets/images/wedding.jpg";
 
@@ -91,6 +92,18 @@ const RoyalGoldTemplate = ({ data, guestName, guestCount, cardSettings = {} }) =
   const audioRef = useRef(null);
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
+  // RSVP Form State
+  const [rsvpForm, setRsvpForm] = useState({
+    name: guestName || "",
+    email: "",
+    attending: "yes",
+    guestCount: guestCount || 1,
+    message: "",
+  });
+  const [rsvpLoading, setRsvpLoading] = useState(false);
+  const [rsvpSubmitted, setRsvpSubmitted] = useState(false);
+  const [rsvpError, setRsvpError] = useState("");
+
   const { scrollY } = useScroll();
   const heroParallax = useTransform(scrollY, [0, 800], [0, 250]);
 
@@ -129,15 +142,29 @@ const RoyalGoldTemplate = ({ data, guestName, guestCount, cardSettings = {} }) =
     setTimeout(() => { setIsOpen(true); setShowWelcomeNote(true); setTimeout(() => setShowWelcomeNote(false), 5000); }, 4000);
   };
 
-  const handleRSVP = (e) => {
+  const handleRSVP = async (e) => {
     e.preventDefault();
-    confetti({
-      particleCount: 150,
-      spread: 70,
-      origin: { y: 0.6 },
-      colors: ["#8a6520", "#c9a84c", "#fdf8f0"]
-    });
-    // Add submission logic here
+    if (!rsvpForm.name.trim()) {
+      setRsvpError("Please enter your name.");
+      return;
+    }
+    setRsvpLoading(true);
+    setRsvpError("");
+    try {
+      await API.post(`invitations/${data.cardId}/rsvp`, rsvpForm);
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ["#8a6520", "#c9a84c", "#fdf8f0"],
+      });
+      setRsvpSubmitted(true);
+    } catch (err) {
+      console.error("RSVP submission error:", err);
+      setRsvpError(err.response?.data?.message || "Failed to submit RSVP. Please try again.");
+    } finally {
+      setRsvpLoading(false);
+    }
   };
 
   const addToCalendar = () => {
@@ -706,79 +733,122 @@ const RoyalGoldTemplate = ({ data, guestName, guestCount, cardSettings = {} }) =
                 <p className="text-[10px] uppercase font-bold tracking-[0.3em] text-[#8a6520]/70">Your presence is the greatest gift</p>
               </div>
 
-              <form onSubmit={handleRSVP} className="space-y-12 text-left pt-8">
-                {/* Name Field */}
-                <div className="relative group">
-                  <input 
-                    defaultValue={guestName} 
-                    placeholder=" " 
-                    className="w-full py-4 bg-transparent border-b border-[#8a6520]/30 outline-none transition-all focus:border-[#8a6520] text-lg font-light peer"
-                  />
-                  <label className="absolute top-4 left-0 text-[#8a6520]/50 text-xs uppercase font-bold tracking-[0.2em] transition-all peer-focus:-top-4 peer-focus:text-[10px] peer-focus:text-[#8a6520] peer-[:not(:placeholder-shown)]:-top-4 peer-[:not(:placeholder-shown)]:text-[10px]">
-                    Your Name
-                  </label>
+              {rsvpSubmitted ? (
+                <div className="py-12 px-6 border border-[#8a6520]/40 rounded-lg bg-white/60 text-center space-y-4">
+                  <div className="w-16 h-16 mx-auto rounded-full bg-[#8a6520]/10 flex items-center justify-center text-[#8a6520] text-3xl">
+                    <HiOutlineHeart />
+                  </div>
+                  <h4 className="text-2xl font-light italic text-[#4a3f35]" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+                    Thank You, {rsvpForm.name}!
+                  </h4>
+                  <p className="text-sm text-[#8a6520]/80">
+                    {rsvpForm.attending === "yes" 
+                      ? "Your attendance has been confirmed. We look forward to celebrating with you!" 
+                      : "We're sorry you can't make it, but thank you for letting us know."}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setRsvpSubmitted(false)}
+                    className="mt-4 text-xs uppercase tracking-widest text-[#8a6520] underline hover:text-[#4a3f35] cursor-pointer"
+                  >
+                    Edit Response
+                  </button>
                 </div>
+              ) : (
+                <form onSubmit={handleRSVP} className="space-y-12 text-left pt-8">
+                  {rsvpError && (
+                    <div className="p-4 bg-red-50 border border-red-200 text-red-700 text-xs rounded">
+                      {rsvpError}
+                    </div>
+                  )}
 
-                {/* Email Field */}
-                <div className="relative group">
-                  <input 
-                    type="email"
-                    placeholder=" " 
-                    className="w-full py-4 bg-transparent border-b border-[#8a6520]/30 outline-none transition-all focus:border-[#8a6520] text-lg font-light peer"
-                  />
-                  <label className="absolute top-4 left-0 text-[#8a6520]/50 text-xs uppercase font-bold tracking-[0.2em] transition-all peer-focus:-top-4 peer-focus:text-[10px] peer-focus:text-[#8a6520] peer-[:not(:placeholder-shown)]:-top-4 peer-[:not(:placeholder-shown)]:text-[10px]">
-                    Email Address
-                  </label>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                  {/* Attending Selection */}
+                  {/* Name Field */}
                   <div className="relative group">
-                    <select className="w-full py-4 bg-transparent border-b border-[#8a6520]/30 outline-none transition-all focus:border-[#8a6520] text-lg font-light appearance-none cursor-pointer peer">
-                      <option value="yes">Yes, I'll be there!</option>
-                      <option value="no">Regretfully decline</option>
-                    </select>
-                    <label className="absolute -top-4 left-0 text-[#8a6520] text-[10px] uppercase font-bold tracking-[0.2em]">
-                      Attending?
+                    <input 
+                      value={rsvpForm.name} 
+                      onChange={(e) => setRsvpForm((prev) => ({ ...prev, name: e.target.value }))}
+                      placeholder=" " 
+                      required
+                      className="w-full py-4 bg-transparent border-b border-[#8a6520]/30 outline-none transition-all focus:border-[#8a6520] text-lg font-light peer"
+                    />
+                    <label className="absolute top-4 left-0 text-[#8a6520]/50 text-xs uppercase font-bold tracking-[0.2em] transition-all peer-focus:-top-4 peer-focus:text-[10px] peer-focus:text-[#8a6520] peer-[:not(:placeholder-shown)]:-top-4 peer-[:not(:placeholder-shown)]:text-[10px]">
+                      Your Name *
                     </label>
                   </div>
 
-                  {/* Guests Field */}
+                  {/* Email Field */}
                   <div className="relative group">
                     <input 
-                      type="number"
-                      defaultValue={guestCount || 1}
+                      type="email"
+                      value={rsvpForm.email}
+                      onChange={(e) => setRsvpForm((prev) => ({ ...prev, email: e.target.value }))}
                       placeholder=" " 
                       className="w-full py-4 bg-transparent border-b border-[#8a6520]/30 outline-none transition-all focus:border-[#8a6520] text-lg font-light peer"
                     />
                     <label className="absolute top-4 left-0 text-[#8a6520]/50 text-xs uppercase font-bold tracking-[0.2em] transition-all peer-focus:-top-4 peer-focus:text-[10px] peer-focus:text-[#8a6520] peer-[:not(:placeholder-shown)]:-top-4 peer-[:not(:placeholder-shown)]:text-[10px]">
-                      Number of Guests
+                      Email Address
                     </label>
                   </div>
-                </div>
 
-                {/* Message Field */}
-                <div className="relative group">
-                  <textarea 
-                    rows={1}
-                    placeholder=" " 
-                    className="w-full py-4 bg-transparent border-b border-[#8a6520]/30 outline-none transition-all focus:border-[#8a6520] text-lg font-light peer resize-none"
-                  />
-                  <label className="absolute top-4 left-0 text-[#8a6520]/50 text-xs uppercase font-bold tracking-[0.2em] transition-all peer-focus:-top-4 peer-focus:text-[10px] peer-focus:text-[#8a6520] peer-[:not(:placeholder-shown)]:-top-4 peer-[:not(:placeholder-shown)]:text-[10px]">
-                    A message for the couple (Optional)
-                  </label>
-                </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    {/* Attending Selection */}
+                    <div className="relative group">
+                      <select 
+                        value={rsvpForm.attending}
+                        onChange={(e) => setRsvpForm((prev) => ({ ...prev, attending: e.target.value }))}
+                        className="w-full py-4 bg-transparent border-b border-[#8a6520]/30 outline-none transition-all focus:border-[#8a6520] text-lg font-light appearance-none cursor-pointer peer"
+                      >
+                        <option value="yes">Yes, I'll be there!</option>
+                        <option value="no">Regretfully decline</option>
+                      </select>
+                      <label className="absolute -top-4 left-0 text-[#8a6520] text-[10px] uppercase font-bold tracking-[0.2em]">
+                        Attending?
+                      </label>
+                    </div>
 
-                <div className="pt-10">
-                  <button 
-                    type="submit" 
-                    className="w-full py-6 border border-[#8a6520] text-[#8a6520] text-xs font-bold uppercase tracking-[0.4em] transition-all duration-500 hover:bg-[#8a6520] hover:text-[#fdf8f0] active:scale-95 shadow-lg flex items-center justify-center gap-3"
-                  >
-                    <HiOutlineHeart className="text-lg" />
-                    Confirm Attendance
-                  </button>
-                </div>
-              </form>
+                    {/* Guests Field */}
+                    <div className="relative group">
+                      <input 
+                        type="number"
+                        min="1"
+                        max="20"
+                        value={rsvpForm.guestCount}
+                        onChange={(e) => setRsvpForm((prev) => ({ ...prev, guestCount: e.target.value }))}
+                        placeholder=" " 
+                        className="w-full py-4 bg-transparent border-b border-[#8a6520]/30 outline-none transition-all focus:border-[#8a6520] text-lg font-light peer"
+                      />
+                      <label className="absolute top-4 left-0 text-[#8a6520]/50 text-xs uppercase font-bold tracking-[0.2em] transition-all peer-focus:-top-4 peer-focus:text-[10px] peer-focus:text-[#8a6520] peer-[:not(:placeholder-shown)]:-top-4 peer-[:not(:placeholder-shown)]:text-[10px]">
+                        Number of Guests
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Message Field */}
+                  <div className="relative group">
+                    <textarea 
+                      rows={2}
+                      value={rsvpForm.message}
+                      onChange={(e) => setRsvpForm((prev) => ({ ...prev, message: e.target.value }))}
+                      placeholder=" " 
+                      className="w-full py-4 bg-transparent border-b border-[#8a6520]/30 outline-none transition-all focus:border-[#8a6520] text-lg font-light peer resize-none"
+                    />
+                    <label className="absolute top-4 left-0 text-[#8a6520]/50 text-xs uppercase font-bold tracking-[0.2em] transition-all peer-focus:-top-4 peer-focus:text-[10px] peer-focus:text-[#8a6520] peer-[:not(:placeholder-shown)]:-top-4 peer-[:not(:placeholder-shown)]:text-[10px]">
+                      A message for the couple (Optional)
+                    </label>
+                  </div>
+
+                  <div className="pt-10">
+                    <button 
+                      type="submit" 
+                      disabled={rsvpLoading}
+                      className="w-full py-6 border border-[#8a6520] text-[#8a6520] text-xs font-bold uppercase tracking-[0.4em] transition-all duration-500 hover:bg-[#8a6520] hover:text-[#fdf8f0] active:scale-95 shadow-lg flex items-center justify-center gap-3 disabled:opacity-50 cursor-pointer"
+                    >
+                      <HiOutlineHeart className="text-lg" />
+                      {rsvpLoading ? "Submitting..." : "Confirm Attendance"}
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           </section>
 
