@@ -1,5 +1,6 @@
 import { validationResult } from "express-validator";
 import { Invitation } from "../models/Invitation.mjs";
+import { deleteUploadedFile, deleteUploadedFiles } from "../utils/fileUtils.mjs";
 
 // Helper to format validation errors
 const errorCreate = (errors) => {
@@ -38,10 +39,15 @@ class InvitationControllers {
             return res.status(409).json({ success: false, message: "A card with this ID already exists." });
          }
 
+         const isAdmin = req.authUser?.role === "ADMIN";
+         const status = isAdmin ? (req.body.status || "ACTIVE") : "PENDING_PAYMENT";
+
          const commonData = {
             invitationType,
             cardId: cardId.toLowerCase(),
             templateId,
+            status,
+            price: Number(req.body.price) || 0,
             event: {
                date: new Date(eventDate),
                location: eventLocation,
@@ -78,6 +84,19 @@ class InvitationControllers {
             invitation = await Invitation.create({ ...commonData, celebrantName, age });
          } else if (invitationType === "event") {
             invitation = await Invitation.create({ ...commonData, eventName, organizer, description });
+         } else if (invitationType === "business-event") {
+            const { eventTitle, tagline, organizer, agenda, speakers, registrationLink, ticketPrice, sponsors } = req.body;
+            invitation = await Invitation.create({
+               ...commonData,
+               eventTitle: eventTitle || req.body.eventName || "Business Event",
+               tagline,
+               organizer,
+               agenda: agenda ? (typeof agenda === "string" ? JSON.parse(agenda) : agenda) : [],
+               speakers: speakers ? (typeof speakers === "string" ? JSON.parse(speakers) : speakers) : [],
+               registrationLink,
+               ticketPrice,
+               sponsors: sponsors ? (typeof sponsors === "string" ? JSON.parse(sponsors) : sponsors) : [],
+            });
          }
 
          res.status(201).json({
@@ -128,7 +147,20 @@ class InvitationControllers {
             });
          }
 
-         // Increment view count
+         // Inactive / Unpaid Holding Gate
+         if (invitation.status && invitation.status !== "ACTIVE") {
+            return res.status(200).json({
+               success: true,
+               isPendingActivation: true,
+               data: {
+                  cardId: invitation.cardId,
+                  invitationType: invitation.invitationType,
+                  status: invitation.status,
+               },
+            });
+         }
+
+         // Increment view count for active cards
          invitation.views += 1;
          await invitation.save();
 
@@ -229,14 +261,18 @@ class InvitationControllers {
             // Handle file uploads
             const coverFile = req.files?.coverImage?.[0];
             if (coverFile) {
+               if (invitation.coverImage) deleteUploadedFile(invitation.coverImage);
                invitation.coverImage = `/uploads/invitations/${coverFile.filename}`;
             } else if (req.body.removeCoverImage === "true") {
+               if (invitation.coverImage) deleteUploadedFile(invitation.coverImage);
                invitation.coverImage = "";
             }
 
             if (req.body.existingGallery !== undefined) {
                try {
                   const keptGallery = JSON.parse(req.body.existingGallery);
+                  const removed = (invitation.galleryImages || []).filter((img) => !keptGallery.includes(img));
+                  deleteUploadedFiles(removed);
                   invitation.galleryImages = keptGallery;
                } catch (err) {
                   console.error("Error parsing existingGallery:", err);
@@ -291,6 +327,10 @@ class InvitationControllers {
             });
          }
 
+         // Clean up associated uploaded files from disk
+         if (invitation.coverImage) deleteUploadedFile(invitation.coverImage);
+         if (invitation.galleryImages?.length > 0) deleteUploadedFiles(invitation.galleryImages);
+
          res.status(200).json({
             success: true,
             message: "Invitation deleted successfully.",
@@ -301,6 +341,77 @@ class InvitationControllers {
             success: false,
             message: "Server error deleting invitation.",
          });
+      }
+   };
+
+   /**------------------------------------------------------------------------------------------------------------------------------------------------------------
+ * @description    Submit RSVP response for an invitation
+ * @route          POST /api/v1/invitations/:cardId/rsvp
+ * @access         Public
+ ---------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+   submitRsvp = async (req, res) => {
+      const { cardId } = req.params;
+      const { name, email, attending, guestCount, message } = req.body;
+
+      if (!name || !name.trim()) {
+         return res.status(400).json({ success: false, message: "Name is required to RSVP." });
+      }
+
+      try {
+         const invitation = await Invitation.findOne({ cardId: cardId.toLowerCase() });
+         if (!invitation) {
+            return res.status(404).json({ success: false, message: "Invitation not found." });
+         }
+
+         if (!invitation.rsvp) invitation.rsvp = {};
+         if (!Array.isArray(invitation.rsvp.responses)) invitation.rsvp.responses = [];
+
+         invitation.rsvp.responses.push({
+            name: name.trim(),
+            email: email ? email.trim() : undefined,
+            attending: attending === "no" ? "no" : "yes",
+            guestCount: Math.max(1, Number(guestCount) || 1),
+            message: message ? message.trim() : undefined,
+            submittedAt: new Date(),
+         });
+
+         await invitation.save();
+
+         res.status(200).json({
+            success: true,
+            message: "Thank you! Your RSVP has been confirmed.",
+         });
+      } catch (error) {
+         console.error("Error submitting RSVP:", error);
+         res.status(500).json({ success: false, message: "Server error submitting RSVP." });
+      }
+   };
+
+   /**------------------------------------------------------------------------------------------------------------------------------------------------------------
+ * @description    Get all RSVP responses for an invitation
+ * @route          GET /api/v1/invitations/:cardId/rsvps
+ * @access         Authenticated
+ ---------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+   getRsvps = async (req, res) => {
+      const { cardId } = req.params;
+
+      try {
+         const invitation = await Invitation.findOne({ cardId: cardId.toLowerCase() }).select("cardId couple celebrantName eventName rsvp");
+         if (!invitation) {
+            return res.status(404).json({ success: false, message: "Invitation not found." });
+         }
+
+         res.status(200).json({
+            success: true,
+            data: {
+               cardId: invitation.cardId,
+               deadline: invitation.rsvp?.deadline || null,
+               responses: invitation.rsvp?.responses || [],
+            },
+         });
+      } catch (error) {
+         console.error("Error fetching RSVPs:", error);
+         res.status(500).json({ success: false, message: "Server error fetching RSVPs." });
       }
    };
 
