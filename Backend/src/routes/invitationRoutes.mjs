@@ -9,8 +9,11 @@ const invitationRoutes = Router();
 // --- PUBLIC ROUTES (for card viewer) ---------------------------------------------------------------------------------
 
 invitationRoutes.get("/:cardId", invitationControllers.getInvitationByCardId);
+invitationRoutes.post("/:cardId/rsvp", invitationControllers.submitRsvp);
 
 // --- PROTECTED ROUTES (Require Authentication) -----------------------------------------------------------------------
+
+invitationRoutes.get("/:cardId/rsvps", authenticateToken, invitationControllers.getRsvps);
 
 const uploadFields = invitationUpload.fields([
    { name: "coverImage", maxCount: 1 },
