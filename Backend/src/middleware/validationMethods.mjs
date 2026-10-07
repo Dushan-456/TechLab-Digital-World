@@ -52,7 +52,7 @@ export const createInvitationValidator = () => [
    body("invitationType")
       .trim()
       .notEmpty().withMessage("Invitation type is required")
-      .isIn(["wedding", "birthday", "event"]).withMessage("Type must be 'wedding', 'birthday', or 'event'"),
+      .isIn(["wedding", "birthday", "event", "business-event"]).withMessage("Type must be 'wedding', 'birthday', 'event', or 'business-event'"),
    body("cardId")
       .trim()
       .notEmpty().withMessage("Card ID (slug) is required")
@@ -119,6 +119,12 @@ export const createInvitationValidator = () => [
       .trim().notEmpty().withMessage("Event name is required"),
    body("organizer").optional().trim(),
    body("description").optional().trim(),
+
+   // Business Event Specific
+   body("eventTitle")
+      .if(body("invitationType").equals("business-event"))
+      .trim().notEmpty().withMessage("Business event title is required"),
+   body("tagline").optional().trim(),
 ];
 
 // --- Business Card Validation Rules -----------------------------------------------------------------------------------
