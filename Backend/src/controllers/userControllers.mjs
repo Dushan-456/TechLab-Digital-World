@@ -17,6 +17,60 @@ const errorCreate = (errors) => {
 
 class UserControllers {
    /**------------------------------------------------------------------------------------------------------------------------------------------------------------
+ * @description    Customer Self-Registration
+ * @route          POST /api/v1/users/customer-register
+ * @access         Public
+ ---------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+   customerRegister = async (req, res) => {
+      const error = validationResult(req);
+      if (!error.isEmpty()) {
+         return res.status(400).json({
+            msg: "Validation error",
+            error: errorCreate(error.array()),
+            data: null,
+         });
+      }
+
+      const { firstName, lastName, username, email, password } = matchedData(req);
+
+      try {
+         const existingUser = await User.findOne({
+            $or: [{ email }, { username }],
+         });
+
+         if (existingUser) {
+            const field = existingUser.email === email ? "Email" : "Username";
+            return res.status(409).json({ error: `${field} is already taken.` });
+         }
+
+         const passwordHash = await User.hashPassword(password);
+
+         const newUser = await User.create({
+            firstName,
+            lastName,
+            username,
+            email,
+            passwordHash,
+            role: "USER",
+         });
+
+         // Automatically set JWT cookie so the user is logged in immediately
+         generateTokenWithCookies(res, newUser._id);
+
+         const userObj = newUser.toObject();
+         delete userObj.passwordHash;
+
+         res.status(201).json({
+            message: "Registration successful! Welcome to TechLab Digital World.",
+            user: userObj,
+         });
+      } catch (error) {
+         console.error("Error during customer registration:", error);
+         res.status(500).json({ message: "Server error during registration" });
+      }
+   };
+
+   /**------------------------------------------------------------------------------------------------------------------------------------------------------------
  * @description    New User Registration
  * @route          POST /api/v1/users/register
  * @access         Admin (only admins can register new users)
