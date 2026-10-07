@@ -1,5 +1,6 @@
 import { validationResult } from "express-validator";
 import { BusinessCard } from "../models/BusinessCard.mjs";
+import { deleteUploadedFile } from "../utils/fileUtils.mjs";
 
 const errorCreate = (errors) => errors.map((e) => ({ field: e.path, message: e.msg }));
 
@@ -18,12 +19,17 @@ class BusinessCardControllers {
             return res.status(409).json({ success: false, message: "A card with this ID already exists." });
          }
 
+         const isAdmin = req.authUser?.role === "ADMIN";
+         const status = isAdmin ? (req.body.status || "ACTIVE") : "PENDING_PAYMENT";
+
          const newCard = await BusinessCard.create({
             cardId: cardId.toLowerCase(),
             templateId,
             personalInfo,
             contactInfo,
             socialLinks,
+            status,
+            price: Number(req.body.price) || 0,
             createdBy: req.authUser._id,
          });
 
@@ -61,6 +67,17 @@ class BusinessCardControllers {
             return res.status(404).json({ success: false, message: "This card is not currently available." });
          }
 
+         if (card.status && card.status !== "ACTIVE") {
+            return res.status(200).json({
+               success: true,
+               isPendingActivation: true,
+               data: {
+                  cardId: card.cardId,
+                  status: card.status,
+               },
+            });
+         }
+
          card.views += 1;
          await card.save();
 
@@ -83,7 +100,12 @@ class BusinessCardControllers {
          }
 
          if (templateId) card.templateId = templateId;
-         if (personalInfo) card.personalInfo = { ...card.personalInfo, ...personalInfo };
+         if (personalInfo) {
+            if (personalInfo.profilePic && card.personalInfo?.profilePic && card.personalInfo.profilePic !== personalInfo.profilePic) {
+               deleteUploadedFile(card.personalInfo.profilePic);
+            }
+            card.personalInfo = { ...card.personalInfo, ...personalInfo };
+         }
          if (contactInfo) card.contactInfo = { ...card.contactInfo, ...contactInfo };
          if (socialLinks) card.socialLinks = { ...card.socialLinks, ...socialLinks };
          if (isPublished !== undefined) card.isPublished = isPublished;
@@ -105,6 +127,10 @@ class BusinessCardControllers {
 
          if (!card) {
             return res.status(404).json({ success: false, message: "Business card not found." });
+         }
+
+         if (card.personalInfo?.profilePic) {
+            deleteUploadedFile(card.personalInfo.profilePic);
          }
 
          res.status(200).json({ success: true, message: "Business Card deleted successfully." });
