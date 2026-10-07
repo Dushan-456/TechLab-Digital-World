@@ -14,6 +14,7 @@ import {
   HiOutlineUserAdd,
   HiOutlineUsers,
   HiOutlineAdjustments,
+  HiOutlineCreditCard,
 } from "react-icons/hi";
 
 const navItems = [
@@ -22,6 +23,11 @@ const navItems = [
     path: "/admin",
     icon: HiOutlineViewGrid,
     end: true,
+  },
+  {
+    label: "Orders & Payments",
+    path: "/admin/orders",
+    icon: HiOutlineCreditCard,
   },
   {
     label: "Wedding Invite",
@@ -105,10 +111,10 @@ const Sidebar = ({ isCollapsed, onToggle }) => {
           {!isCollapsed && (
             <div className="flex flex-col whitespace-nowrap">
               <span className="text-sm font-semibold text-[var(--color-text-inverted)] font-[var(--font-display)] tracking-wide">
-                Digital Wedding
+                TechLab Digital
               </span>
               <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-widest">
-                Admin Panel
+                Management Portal
               </span>
             </div>
           )}
